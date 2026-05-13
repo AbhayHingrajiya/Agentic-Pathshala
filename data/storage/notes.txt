@@ -1,0 +1,1 @@
+{"learner_id": "L001", "topic": "RAG", "content": "ChromaDB stores embeddings"}

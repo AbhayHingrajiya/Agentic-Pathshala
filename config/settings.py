@@ -21,6 +21,8 @@ class Settings(BaseSettings):
 
     # MCP
     MCP_SERVER_URL: str = "http://localhost:8000/mcp"
+      
+    TEMPERATURE: float = 0.2
 
     #Settings Config
     model_config = SettingsConfigDict(
