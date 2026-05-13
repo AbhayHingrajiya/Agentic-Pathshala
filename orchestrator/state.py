@@ -1,11 +1,12 @@
-from typing import TypedDict, Dict, List, Any
+from typing import TypedDict
 
 class CoachState(TypedDict):
-    
-    user_input: str
-    currunt_intent: str
-    tool_result: str
-    retrieved_docs: List[str]
-    final_response: str
-    execution_path: List[str]
 
+    messages: list
+    user_role: str
+    learner_id: str
+    current_intent: str
+    retrieved_context: str
+    tool_results: dict
+    requires_approval: bool
+    final_response: str

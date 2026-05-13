@@ -10,4 +10,5 @@ def route_intent(state):
         "notes_query": "notes_agent"
     }
 
-    return routes.get(intent, "coordinator")
+    return routes.get(intent, "fallback")
+
