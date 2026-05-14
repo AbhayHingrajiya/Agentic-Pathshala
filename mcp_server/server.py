@@ -35,6 +35,21 @@ def get_assignments():
         "assignments": assignments
     }
 
+@mcp.tool()
+def get_assignments_for_learner(learner_id: str) -> dict:
+    """Get all assignments for a specific learner."""
+    all_assignments = read_records("assignments.xlsx")
+    learner_assignments = [
+        a for a in all_assignments
+        if str(a.get("learner_id", "")).strip() == str(learner_id).strip()
+    ]
+    return {
+        "learner_id": learner_id,
+        "count": len(learner_assignments),
+        "assignments": learner_assignments
+    }
+
+
 if __name__ == "__main__":
 
     print("Starting MCP server...")

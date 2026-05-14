@@ -1,6 +1,8 @@
 from .state import CoachState
 from utils import load_prompt
 from agents import coordinator_agent, notes_agent
+from agents.assignment_agent import assignment_agent
+
 
 # -----------------------------
 # NODE FUNCTIONS
@@ -59,3 +61,19 @@ def fallback_node(state: CoachState) -> dict:
         }
     except Exception as e:
         return {"agent_response": str(e)}
+
+def assignment_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("assignment_node")
+        state["execution_path"] = path
+        updated_state = assignment_agent(state)
+        return {
+            "agent_response": updated_state.get("agent_response", "No response generated."),
+            "execution_path": updated_state.get("execution_path", path)
+        }
+    except Exception as e:
+        return {
+            "agent_response": f"Error in Assignment Agent: {str(e)}",
+            "execution_path": state.get("execution_path", []) + ["assignment_node_error"]
+        }
