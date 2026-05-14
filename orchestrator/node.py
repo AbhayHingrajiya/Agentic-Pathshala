@@ -1,126 +1,61 @@
 from .state import CoachState
+from utils import load_prompt
+from agents import coordinator_agent, notes_agent
 
 # -----------------------------
 # NODE FUNCTIONS
 # -----------------------------
 
-def coordinator_node(state: CoachState) -> CoachState:
+def coordinator_node(state: CoachState) -> dict:
     try:
         path = state.get("execution_path", [])
-        path.append("coordinator")
-        return {"execution_path": path}
-    except Exception as e:
+        path.append("coordinator_node")
+        state["execution_path"] = path
+
+        updated_state = coordinator_agent(state)
+        
         return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "coordinator_node"
-            }
+            "current_intent": updated_state["current_intent"],
+            "execution_path": updated_state["execution_path"]
         }
-
-def router_node(state: CoachState) -> dict[str, str]:
-    try:
-        path = state.get("execution_path", [])
-        path.append("router")
-        query = state["user_input"].lower()
-
-        if "assignment" in query:
-            intent = "assignment"
-        elif "hello" in query:
-            intent = "general"
-        else:
-            intent = 'fallback'
-
-        return {"currunt_intent": intent, "execution_path": path}
     except Exception as e:
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "router_node"
-            }
-        }
+        return {"agent_response": f"Error: {str(e)}"}
 
-def assignment_node(state: CoachState) -> dict[str, str]:
+def notes_agent_node(state: CoachState) -> dict:
     try:
         path = state.get("execution_path", [])
-        path.append("assignment")
+        path.append("notes_agent_node")
+        state["execution_path"] = path
+
+        updated_state = notes_agent(state)
+        
         return {
-            "tool_result": {
-                "status": "success",
-                "message": "Assignment feature coming soon.",
-                "source": "assignment_node"
-            },
+            "agent_response": updated_state["agent_response"],
+            "retrieved_context": updated_state["retrieved_context"],
+            "execution_path": updated_state["execution_path"]
+        }
+    except Exception as e:
+        return {"agent_response": f"Error in Notes Agent: {str(e)}"}
+
+def response_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("response_node")
+        
+        return {
             "execution_path": path
         }
     except Exception as e:
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "assignment_node"
-            }
-        }
+        return {"agent_response": f"Error in Response Node: {str(e)}"}
 
-def general_node(state: CoachState) -> dict[str, str]:
+def fallback_node(state: CoachState) -> dict:
     try:
         path = state.get("execution_path", [])
-        path.append("general")
+        path.append("fallback_node")
+        
         return {
-            "tool_result": {
-                "status": "success",
-                "message": f"You said: {state['user_input']}",
-                "source": "general_node"
-            },
+            "agent_response": "I'm not sure how to help with that. Could you try asking about a specific learning concept?",
             "execution_path": path
         }
     except Exception as e:
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "general_node"
-            }
-        }
-    
-def response_node(state: CoachState) -> dict[str, str]:
-    try:
-        path = state.get("execution_path", [])
-        path.append("response")
-        tool_result = state["tool_result"]
-
-        if tool_result["status"] == "success":
-            message = tool_result["message"]
-        else:
-            message = "Something went wrong."
-
-        return {"tool_result": message, "execution_path": path}
-    except Exception as e:
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "response_node"
-            }
-        }
-
-def fallback_node(state: CoachState) -> dict[str, str]:
-    try:
-        path = state.get("execution_path", [])
-        path.append("fallback")
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": "I don't understand your request.",
-                "source": "fallback_node"
-            },
-            "execution_path": path
-        }
-    except Exception as e:
-        return {
-            "tool_result": {
-                "status": "error",
-                "message": str(e),
-                "source": "fallback_node"
-            }
-        }
+        return {"agent_response": str(e)}
