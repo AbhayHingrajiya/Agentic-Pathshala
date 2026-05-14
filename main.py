@@ -83,7 +83,8 @@ class MainApp:
         table.add_row("1", "Assigned Assignment")
         table.add_row("2", "Available Assignements")
         table.add_row("3", "Assessment")
-        table.add_row("4", "Exit Application")
+        table.add_row("4", "Chat with AI")
+        table.add_row("5", "Exit Application")
 
         console.print(table)
 
@@ -99,17 +100,17 @@ class MainApp:
                 default="1"
             ).strip()
 
-            if not choice.isdigit() or not (1 <= int(choice) <= 4):
+            if not choice.isdigit() or not (1 <= int(choice) <= 5):
 
                 console.print(
-                    "[bold red]❌ Invalid choice! Please enter 1-4.[/bold red]\n"
+                    "[bold red]❌ Invalid choice! Please enter 1-5.[/bold red]\n"
                 )
 
                 continue
 
             user_prompt = None
 
-            if 2 <= int(choice) <= 3:
+            if 2 <= int(choice) <= 4:
 
                 user_prompt = Prompt.ask(
                     "\n[bold yellow]Enter your prompt[/bold yellow]"
@@ -156,6 +157,30 @@ class MainApp:
                     )
 
             elif choice == "4":
+
+                with console.status(
+                    "[bold magenta]🧠 AI Coach is thinking...[/bold magenta]",
+                    spinner="dots"
+                ):
+                    
+                    initial_state = {
+                        "user_input": user_prompt,
+                        "learner_id": learner["learner_id"],
+                        "execution_path": []
+                    }
+                    
+                    response = graph.invoke(initial_state)
+
+                    console.print("\n[bold cyan]🤖 AI Coach:[/bold cyan]")
+                    
+                    if "agent_response" in response:
+                        console.print(response["agent_response"])
+                    else:
+                        console.print("[red]Something went wrong with the graph![/red]")
+                        
+                    console.print(f"\n[dim italic]Path taken: {' ➡️ '.join(response.get('execution_path', []))}[/dim italic]\n")
+
+            elif choice == "5":
 
                 console.print(
                     Panel(
