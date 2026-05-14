@@ -19,7 +19,7 @@ def seed_learners():
     ]
 
     for learner in learners:
-        write_record("learners.txt", learner)
+        write_record("learners.xlsx", learner)
 
 
 def seed_assignments():
@@ -38,7 +38,7 @@ def seed_assignments():
     ]
 
     for assignment in assignments:
-        write_record("assignments.txt", assignment)
+        write_record("assignments.xlsx", assignment)
 
 
 def seed_progress():
@@ -57,7 +57,7 @@ def seed_progress():
     ]
 
     for item in progress:
-        write_record("progress.txt", item)
+        write_record("progress.xlsx", item)
 
 
 def seed_notes():
@@ -71,7 +71,7 @@ def seed_notes():
     ]
 
     for note in notes:
-        write_record("notes.txt", note)
+        write_record("notes.xlsx", note)
 
 
 if __name__ == "__main__":

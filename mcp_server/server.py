@@ -18,13 +18,22 @@ def ping():
 @mcp.tool()
 def get_learners():
 
-    learners = read_records("learners.txt")
+    learners = read_records("learners.xlsx")
 
     return {
         "count": len(learners),
         "learners": learners
     }
 
+@mcp.tool()
+def get_assignments():
+
+    assignments = read_records("assignments.xlsx")
+
+    return {
+        "count": len(assignments),
+        "assignments": assignments
+    }
 
 if __name__ == "__main__":
 

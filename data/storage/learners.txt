@@ -1,3 +1,0 @@
-{"learner_id": "L001", "name": "Alice"}
-{"learner_id": "L002", "name": "Bob"}
-{"learner_id": "L003", "name": "Charlie"}
