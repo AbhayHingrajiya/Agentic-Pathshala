@@ -1,5 +1,13 @@
+import sys
+from pathlib import Path
+
+# Ensure project root is on sys.path so utils, config, etc. are importable
+# regardless of how the server is launched (direct file or -m module).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from fastmcp import FastMCP
 from utils.excel_store import read_records
+
 
 
 mcp = FastMCP(

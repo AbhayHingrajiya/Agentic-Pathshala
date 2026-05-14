@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     COLLECTION_NAME: str = "learning_coach_kb"
 
     # MCP
-    MCP_SERVER_URL: str = "http://localhost:8000/"
+    MCP_SERVER_URL: str = "http://localhost:8000"
       
     TEMPERATURE: float = 0.2
 
