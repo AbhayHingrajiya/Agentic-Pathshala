@@ -25,6 +25,15 @@ def get_learners():
         "learners": learners
     }
 
+@mcp.tool()
+def get_assignments():
+
+    assignments = read_records("assignments.xlsx")
+
+    return {
+        "count": len(assignments),
+        "assignments": assignments
+    }
 
 if __name__ == "__main__":
 
