@@ -1,8 +1,14 @@
-from .state import CoachState
+def route_intent(state):
 
-# -----------------------------
-# ROUTING FUNCTION
-# -----------------------------
+    intent = state.get("current_intent")
 
-def route_intent(state: CoachState) -> str:
-    return state["currunt_intent"]
+    routes = {
+        "assignment_query": "assignment_agent",
+        "progress_query": "progress_agent",
+        "recommendation": "recommendation_agent",
+        "evaluation_request": "evaluation_agent",
+        "notes_query": "notes_agent"
+    }
+
+    return routes.get(intent, "fallback")
+

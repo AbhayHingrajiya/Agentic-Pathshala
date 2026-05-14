@@ -1,2 +1,0 @@
-{"learner_id": "L001", "assignment_id": "week1_python", "status": "submitted"}
-{"learner_id": "L002", "assignment_id": "week1_python", "status": "pending"}

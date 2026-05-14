@@ -1,2 +1,0 @@
-{"learner_id": "L001", "topic": "Python Basics", "score": 85}
-{"learner_id": "L002", "topic": "Python Basics", "score": 60}
