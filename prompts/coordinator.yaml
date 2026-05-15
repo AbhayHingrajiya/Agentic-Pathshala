@@ -14,9 +14,10 @@ system_template: |
   - recommendation
   - evaluation_request
   - notes_query
+  - assessment_query
   - unknown
 
-  Return ONLY the intent name. For now always return "notes_query".
+  Return ONLY the intent name.
 
 human_template: |
   User query:

@@ -152,9 +152,23 @@ class MainApp:
                     spinner="earth"
                 ):
 
-                    self.question_handler.ask_question_hybrid(
-                        user_prompt
-                    )
+                    user_prompt = f"always return 'assessment_query' : {user_prompt}"
+                    initial_state = {
+                        "user_input": user_prompt,
+                        "learner_id": learner["learner_id"],
+                        "execution_path": []
+                    }
+                    
+                    response = graph.invoke(initial_state)
+
+                    console.print("\n[bold cyan]🤖 Assessment[/bold cyan]")
+                    
+                    if "agent_response" in response:
+                        console.print(response["agent_response"])
+                    else:
+                        console.print("[red]Something went wrong with the graph![/red]")
+                        
+                    console.print(f"\n[dim italic]Path taken: {' ➡️ '.join(response.get('execution_path', []))}[/dim italic]\n")
 
             elif choice == "4":
 
