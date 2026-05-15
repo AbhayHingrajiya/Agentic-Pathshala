@@ -5,8 +5,8 @@ system_template: |
   - classify learner intent based on the user's query that if the query is related to assignment queries, progress queries, recommendations, evaluation requests, or notes queries.
   - decide which specialized agent should handle the request
   - if user is asking about any policies of agentic pathshala or any other policy related question move directly to the notes_query
- 
- 
+
+
 
   Allowed intents:
   - assignment_query

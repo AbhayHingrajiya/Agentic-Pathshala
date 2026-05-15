@@ -4,9 +4,11 @@ from langchain_core.documents import Document
 
 from rag import get_vectorstore
 
+from config.settings import settings
+
 logger = logging.getLogger(__name__)
 
-MAX_SIMILARITY_SCORE = 0.8
+
 
 def retrieve_documents(query: str, k: int = 5) -> list[Document]:
     """Retrieve relevant documents from the vector store"""
@@ -19,7 +21,7 @@ def retrieve_documents(query: str, k: int = 5) -> list[Document]:
     filtered_results = [
         (document, score)
         for document, score in results
-        if score <= MAX_SIMILARITY_SCORE
+        if score <= settings.MAX_SIMILARITY_SCORE
     ]
 
     logger.info("Retrieved %s documents", len(filtered_results))

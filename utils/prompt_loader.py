@@ -3,7 +3,7 @@ import yaml
 from langchain_core.prompts import ChatPromptTemplate
 
 def load_prompt(prompt_name: str):
-    with open(f"prompts/{prompt_name}.yaml", "r") as f:
+    with open(f"prompts/{prompt_name}.yaml", "r", encoding="utf-8") as f:
         prompt_data = yaml.safe_load(f)
 
     system_template = prompt_data["system_template"]

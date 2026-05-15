@@ -20,9 +20,11 @@ class Settings(BaseSettings):
     COLLECTION_NAME: str = "learning_coach_kb"
 
     # MCP
-    MCP_SERVER_URL: str = "http://localhost:8000/mcp"
+    MCP_SERVER_URL: str = "http://localhost:8000"
       
     TEMPERATURE: float = 0.2
+
+    MAX_SIMILARITY_SCORE: float = 1.2
 
     #Settings Config
     model_config = SettingsConfigDict(
