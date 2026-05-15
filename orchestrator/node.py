@@ -2,6 +2,7 @@ from .state import CoachState
 from utils import load_prompt
 from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent
 from agents.assignment_agent import assignment_agent
+from agents.recommendation_agent import recommendation_agent
 
 
 # -----------------------------
@@ -108,4 +109,20 @@ def assignment_node(state: CoachState) -> dict:
         return {
             "agent_response": f"Error in Assignment Agent: {str(e)}",
             "execution_path": state.get("execution_path", []) + ["assignment_node_error"]
+        }
+
+def recommendation_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("recommendation_node")
+        state["execution_path"] = path
+        updated_state = recommendation_agent(state)
+        return {
+            "agent_response": updated_state.get("agent_response", "No recommendation generated."),
+            "execution_path": updated_state.get("execution_path", path)
+        }
+    except Exception as e:
+        return {
+            "agent_response": f"Error in Recommendation Agent: {str(e)}",
+            "execution_path": state.get("execution_path", []) + ["recommendation_node_error"]
         }

@@ -57,6 +57,20 @@ def get_assignments_for_learner(learner_id: str) -> dict:
         "assignments": learner_assignments
     }
 
+@mcp.tool()
+def get_progress_for_learner(learner_id: str) -> dict:
+    """Get all progress/score records for a specific learner."""
+    all_progress = read_records("progress.xlsx")
+    learner_progress = [
+        p for p in all_progress
+        if str(p.get("learner_id", "")).strip() == str(learner_id).strip()
+    ]
+    return {
+        "learner_id": learner_id,
+        "count": len(learner_progress),
+        "progress": learner_progress
+    }
+
 
 if __name__ == "__main__":
 
