@@ -3,7 +3,7 @@ def route_intent(state):
     intent = state.get("current_intent")
 
     routes = {
-        "assignment_query": "assignment_agent",
+        "assignment_query": "assignment", 
         "progress_query": "progress_agent",
         "recommendation": "recommendation_agent",
         "evaluation_request": "evaluation_agent",
