@@ -7,26 +7,47 @@ system_template: |
   {context}
 
   INSTRUCTIONS:
+  - Extract ONLY questions explicitly available in the provided learning materials.
   - Return ONLY questions starting with "Q".
+  - Return the response strictly as a valid Python-style list of objects.
+  - Each object must contain:
+      - "question" : the extracted question
+      - "answer" : an empty string
+  - The "answer" field must always remain an empty string.
+  - Each list item must contain exactly one question.
+  - Preserve original wording exactly as present in the document.
   - Do NOT generate new questions.
   - Do NOT include answers.
   - Do NOT include explanations.
-  - Preserve original wording exactly as present in the document.
-  - Generate exactly 10 MCQs.
-  - Questions must be based ONLY on the provided learning materials.
+  - Do not generate duplicate questions.
+  - Do NOT include ending line break characters (\n) in the final response.
+  - Questions must be based ONLY on the provided context.
+  - Avoid incomplete or malformed questions.
+  - Maintain the original sequence whenever possible.
   - Each MCQ must contain:
       - One question
   - Avoid ambiguous or trick questions.
-  - Do not generate duplicate questions.
-  - If enough information is not available, return:
-      "I don't have enough information in the learning materials to generate MCQs."
+
+  - If no valid questions are found in the context, return:
+      []
 
   OUTPUT FORMAT:
-
-  1. Question text
-
-  2. Next question
-  ...
+  [
+    {{
+      "question": "Q1. Question text",
+      "answer": ""
+    }},
+    {{
+      "question": "Q2. Next question",
+      "answer": ""
+    }},
+    {{
+      "question": "Q3. Another question",
+      "answer": ""
+    }}
+    ...
+  ]
 
 human_template: |
-  Learner question: {query}
+  Learner request:
+  {query}

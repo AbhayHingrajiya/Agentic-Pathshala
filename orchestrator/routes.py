@@ -8,7 +8,8 @@ def route_intent(state):
         "recommendation": "recommendation",
         "evaluation_request": "evaluation_agent",
         "notes_query": "notes_agent",
-        "assessment_query": "assessment_agent"
+        "assessment_query": "assessment_agent",
+        "evaluator_query": "evaluator_agent"
     }
 
     return routes.get(intent, "fallback")

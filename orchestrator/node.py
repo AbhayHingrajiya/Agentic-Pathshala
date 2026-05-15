@@ -1,6 +1,6 @@
 from .state import CoachState
 from utils import load_prompt
-from agents import coordinator_agent, notes_agent, assessment_agent
+from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent
 from agents.assignment_agent import assignment_agent
 from agents.recommendation_agent import recommendation_agent
 
@@ -55,6 +55,22 @@ def assessment_agent_node(state: CoachState) -> dict:
         }
     except Exception as e:
         return {"agent_response": f"Error in Assessment Agent: {str(e)}"}
+
+def evaluator_agent_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("evaluator_agent_node")
+        state["execution_path"] = path
+
+        updated_state = evaluator_agent(state)
+        
+        return {
+            "agent_response": updated_state["agent_response"],
+            "retrieved_context": updated_state["retrieved_context"],
+            "execution_path": updated_state["execution_path"]
+        }
+    except Exception as e:
+        return {"agent_response": f"Error in Evaluator Agent: {str(e)}"}
 
 def response_node(state: CoachState) -> dict:
     try:
