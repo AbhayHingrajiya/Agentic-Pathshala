@@ -15,6 +15,7 @@ system_template: |
   - evaluation_request
   - notes_query
   - assessment_query
+  - evaluator_query
   - unknown
 
   Return ONLY the intent name.
