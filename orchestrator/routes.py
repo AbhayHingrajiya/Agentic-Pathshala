@@ -5,7 +5,7 @@ def route_intent(state):
     routes = {
         "assignment_query": "assignment", 
         "progress_query": "progress_agent",
-        "recommendation": "recommendation_agent",
+        "recommendation": "recommendation",
         "evaluation_request": "evaluation_agent",
         "notes_query": "notes_agent",
         "assessment_query": "assessment_agent"
