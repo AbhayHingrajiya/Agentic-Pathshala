@@ -22,6 +22,9 @@ system_template: |
 human_template: |
   Learner ID: {learner_id}
 
+  What I remember about this learner from past sessions:
+  {memory_context}    
+
   Assignment data:
   {assignment_data}
 
@@ -35,6 +38,7 @@ human_template: |
 
 variables:
   - learner_id
+  - memory_context
   - assignment_data
   - progress_data
   - retrieved_context
