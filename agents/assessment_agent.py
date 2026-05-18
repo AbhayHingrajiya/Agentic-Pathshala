@@ -4,7 +4,7 @@ from rag import retrieve_documents
 def assessment_agent(state):
     query = state["user_input"].replace("always return 'assessment_query' : ", "").strip()
     
-    results = retrieve_documents(query, k=5)
+    results = retrieve_documents(query, k=100)
     
     context = "\n\n".join([doc.page_content for doc, score in results])
     
