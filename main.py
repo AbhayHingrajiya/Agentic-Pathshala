@@ -122,15 +122,50 @@ class MainApp:
         self._display_agent_response(evaluation_response)
 
     def _handle_chat(self, learner: object) -> None:
-        user_prompt = self._request_user_prompt()
-        if user_prompt is None:
-            return
-
-        with console.status("[bold magenta]🧠 AI Coach is thinking...[/bold magenta]", spinner="dots"):
-            response = self.ai_service.chat(user_prompt, learner.learner_id)
-
-        console.print("\n[bold cyan]🤖 AI Coach:[/bold cyan]")
-        self._display_agent_response(response)
+        """
+        Runs a persistent multi-turn chat session.
+        User stays in chat until they type /exit or /quit.
+        Why a while loop here instead of in run()?
+        Because this is the only place that knows we're in "chat mode".
+        The run() loop handles menu navigation — it shouldn't know about
+        chat-specific concepts like /exit commands.
+        """
+        console.print(
+            Panel(
+                "[bold green]💬 Chat Session Started[/bold green]\n"
+                "[dim]Type [bold]/exit[/bold] or [bold]/quit[/bold] to return to the main menu.[/dim]",
+                border_style="green",
+                padding=(1, 2),
+            )
+        )
+        # This loop IS the chat session
+        while True:
+            # Ask user for input using rich prompt
+            user_prompt = Prompt.ask("\n[bold yellow]You[/bold yellow]").strip()
+            # --- Exit commands ---
+            if user_prompt.lower() in ("/exit", "/quit"):
+                console.print(
+                    Panel(
+                        "[bold yellow]👋 Leaving chat session...[/bold yellow]",
+                        border_style="yellow",
+                        padding=(1, 1),
+                    )
+                )
+                break   # ← exits the while loop, returns to run() main menu
+            # --- Skip empty input ---
+            if not user_prompt:
+                console.print("[dim]Please type a message.[/dim]")
+                continue   # ← loops back to ask again
+            # --- Run the graph for this turn ---
+            with console.status(
+                "[bold magenta]🧠 AI Coach is thinking...[/bold magenta]",
+                spinner="dots"
+            ):
+                response = self.ai_service.chat(user_prompt, learner.learner_id)
+            # --- Display the response ---
+            console.print("\n[bold cyan]🤖 AI Coach:[/bold cyan]")
+            self._display_agent_response(response)
+            # Loop continues → user sees "You:" prompt again
 
     def _exit_application(self) -> None:
         console.print(
