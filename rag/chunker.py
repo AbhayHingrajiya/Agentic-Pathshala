@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 logger = logging.getLogger(__name__)
 
 class DocumentChunker:
-    def __init__(self, chunk_size=500, chunk_overlap=50):
+    def __init__(self, chunk_size=2000, chunk_overlap=200):
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size = chunk_size,
             chunk_overlap = chunk_overlap,

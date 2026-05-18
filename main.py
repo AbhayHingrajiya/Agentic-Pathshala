@@ -12,6 +12,7 @@ from config.settings import settings
 from handlers.assignment_handler import AssignmentHandler
 from handlers.login_handler import LoginHandler
 from handlers.menu_handler import MenuHandler
+from rag.ingestion import ingest_documents
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_repository import LearnerRepository
 from services.ai_service import AIService
@@ -36,6 +37,7 @@ class MainApp:
         self.menu_handler = MenuHandler(console)
         self.login_handler = LoginHandler(auth_service, console)
         self.assignment_handler = AssignmentHandler(assignment_service, console)
+        ingest_documents()
 
         logger.info("Configuration loaded from %s", settings.MCP_SERVER_URL)
 
@@ -62,8 +64,8 @@ class MainApp:
 
         learner = self.login_handler.login()
         if learner is None:
-            console.print("\n[bold red]❌ Login failed! Exiting application.[/bold red]")
-            sys.exit(1)
+            console.print("\n[bold red]❌ Login failed![/bold red]")
+            self.login()
 
         console.print(f"\n[bold green]✅ Welcome {learner.name}![/bold green]\n")
         self.run(learner)
