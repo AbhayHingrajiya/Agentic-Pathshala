@@ -16,27 +16,40 @@ class AIService:
     def _build_prompt(template: str, payload: str) -> str:
         return template.format(payload=payload.strip())
 
-    def invoke(self, user_input: str, learner_id: str) -> dict[str, Any]:
+    def invoke(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
+        session_data = {}
+        if session:
+            if hasattr(session, "role"):
+                session_data = {
+                    "user_id": session.user_id,
+                    "role": session.role,
+                    "name": session.name,
+                    "email": session.email
+                }
+            elif isinstance(session, dict):
+                session_data = session
+
         state = {
             "user_input": user_input,
             "learner_id": learner_id,
+            "session": session_data,
             "execution_path": []
         }
         response = graph.invoke(state)
         self._logger.debug("Graph returned execution path: %s", response.get("execution_path"))
         return response or {}
 
-    def run_assessment(self, user_input: str, learner_id: str) -> dict[str, Any]:
+    def run_assessment(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
         prompt = self._build_prompt(ASSESSMENT_PROMPT_TEMPLATE, user_input)
-        return self.invoke(prompt, learner_id)
+        return self.invoke(prompt, learner_id, session)
 
-    def evaluate_assessment(self, questions: Iterable[dict], learner_id: str) -> dict[str, Any]:
+    def evaluate_assessment(self, questions: Iterable[dict], learner_id: str, session: Any = None) -> dict[str, Any]:
         payload = json.dumps(list(questions), indent=4)
         prompt = self._build_prompt(EVALUATOR_PROMPT_TEMPLATE, payload)
-        return self.invoke(prompt, learner_id)
+        return self.invoke(prompt, learner_id, session)
 
-    def chat(self, user_input: str, learner_id: str) -> dict[str, Any]:
-        return self.invoke(user_input, learner_id)
+    def chat(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
+        return self.invoke(user_input, learner_id, session)
 
     def parse_assessment_questions(self, response: dict[str, Any]) -> List[dict]:
         raw_questions = response.get("agent_response", "[]")

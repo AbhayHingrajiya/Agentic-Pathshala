@@ -15,6 +15,7 @@ from handlers.menu_handler import MenuHandler
 from rag.ingestion import ingest_documents
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_repository import LearnerRepository
+from repositories.coach_repository import CoachRepository
 from services.ai_service import AIService
 from services.assignment_service import AssignmentService
 from services.auth_service import AuthService
@@ -29,8 +30,9 @@ class MainApp:
     def __init__(self) -> None:
         learner_repository = LearnerRepository()
         assignment_repository = AssignmentRepository()
+        coach_repository = CoachRepository()
 
-        auth_service = AuthService(learner_repository)
+        auth_service = AuthService(learner_repository, coach_repository)
         assignment_service = AssignmentService(assignment_repository)
         self.ai_service = AIService()
 
@@ -62,14 +64,15 @@ class MainApp:
         self.show_banner()
         console.print("\n[bold yellow]🔐 Login Required[/bold yellow]\n")
 
-        learner = self.login_handler.login()
-        if learner is None:
+        session = self.login_handler.login()
+        if session is None:
             console.print("\n[bold red]❌ Login failed![/bold red]")
             self.login()
+            return None
 
-        console.print(f"\n[bold green]✅ Welcome {learner.name}![/bold green]\n")
-        self.run(learner)
-        return learner
+        # Display is handled in LoginHandler, so we just run
+        self.run(session)
+        return session
 
     def _request_user_prompt(self) -> Optional[str]:
         user_prompt = Prompt.ask("\n[bold yellow]Enter your prompt[/bold yellow]").strip()
@@ -87,12 +90,12 @@ class MainApp:
         execution_path = response.get("execution_path", [])
         console.print(f"\n[dim italic]Path taken: {' ➡️ '.join(execution_path)}[/dim italic]\n")
 
-    def _handle_assessment(self, learner: object) -> None:
+    def _handle_assessment(self, session: object) -> None:
         user_prompt = self._request_user_prompt()
         if user_prompt is None:
             return
 
-        response = self.ai_service.run_assessment(user_prompt, learner.learner_id)
+        response = self.ai_service.run_assessment(user_prompt, session.user_id, session)
         console.print("\n[bold cyan]🤖 Assessment[/bold cyan]")
 
         assessment_questions = self.ai_service.parse_assessment_questions(response)
@@ -115,19 +118,20 @@ class MainApp:
 
         evaluation_response = self.ai_service.evaluate_assessment(
             assessment_questions,
-            learner.learner_id,
+            session.user_id,
+            session
         )
 
         console.print("\n[bold cyan]🤖 Evaluator[/bold cyan]")
         self._display_agent_response(evaluation_response)
 
-    def _handle_chat(self, learner: object) -> None:
+    def _handle_chat(self, session: object) -> None:
         user_prompt = self._request_user_prompt()
         if user_prompt is None:
             return
 
         with console.status("[bold magenta]🧠 AI Coach is thinking...[/bold magenta]", spinner="dots"):
-            response = self.ai_service.chat(user_prompt, learner.learner_id)
+            response = self.ai_service.chat(user_prompt, session.user_id, session)
 
         console.print("\n[bold cyan]🤖 AI Coach:[/bold cyan]")
         self._display_agent_response(response)
@@ -142,7 +146,7 @@ class MainApp:
         )
         sys.exit(0)
 
-    def run(self, learner: object) -> None:
+    def run(self, session: object) -> None:
         while True:
             self.menu_handler.display_menu()
             choice = self.menu_handler.prompt_choice()
@@ -152,13 +156,13 @@ class MainApp:
             try:
                 if choice == "1":
                     console.print("\n[bold blue]📂 Fetching assignments...[/bold blue]\n")
-                    self.assignment_handler.view_assigned_assignments(learner.learner_id)
+                    self.assignment_handler.view_assigned_assignments(session.user_id)
                 elif choice == "2":
-                    self.assignment_handler.view_available_assignments(learner.learner_id)
+                    self.assignment_handler.view_available_assignments(session.user_id)
                 elif choice == "3":
-                    self._handle_assessment(learner)
+                    self._handle_assessment(session)
                 elif choice == "4":
-                    self._handle_chat(learner)
+                    self._handle_chat(session)
                 elif choice == "5":
                     self._exit_application()
                 else:
