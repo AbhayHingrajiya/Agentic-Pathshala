@@ -42,6 +42,7 @@ def recommendation_agent(state: dict) -> dict:
     chain = prompt | llm
     response = chain.invoke({
         "learner_id": learner_id,
+        "memory_context": state.get("memory_context", "No past memories."),
         "assignment_data": str(assignment_data) if assignment_data else "No assignments found.",
         "progress_data": str(progress_data) if progress_data else "No progress data found.",
         "retrieved_context": retrieved_context

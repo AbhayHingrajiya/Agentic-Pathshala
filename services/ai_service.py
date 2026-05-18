@@ -36,7 +36,6 @@ class AIService:
             "execution_path": []
         }
         response = graph.invoke(state)
-        self._logger.debug("Graph returned execution path: %s", response.get("execution_path"))
         return response or {}
 
     def run_assessment(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:

@@ -8,3 +8,4 @@ class CoachState(TypedDict):
     learner_id: str
     agent_response: str
     execution_path: list
+    momery_context: str

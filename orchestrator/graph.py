@@ -10,7 +10,9 @@ from .node import (
     fallback_node, 
     assignment_node, 
     recommendation_node,
-    coach_assignment_node
+    coach_assignment_node,
+    memory_reader_node, 
+    memory_writer_node
 )
 from .routes import route_intent
 
@@ -29,9 +31,13 @@ builder.add_node("fallback", fallback_node)
 builder.add_node("assignment", assignment_node)
 builder.add_node("recommendation", recommendation_node)
 builder.add_node("coach_assignment", coach_assignment_node)
+builder.add_node("recommendation", recommendation_node) 
+builder.add_node("memory_reader", memory_reader_node)
+builder.add_node("memory_writer", memory_writer_node)
 
 # 2. Start edge
-builder.add_edge(START, "coordinator")
+builder.add_edge(START, "memory_reader")                
+builder.add_edge("memory_reader", "coordinator") 
 
 builder.add_conditional_edges(
     "coordinator",
@@ -56,6 +62,8 @@ builder.add_edge("assignment", "response")
 builder.add_edge("coach_assignment", "response")
 
 builder.add_edge("response", END)
+builder.add_edge("response", "memory_writer")           # ← ADD (was response → END)
+builder.add_edge("memory_writer", END)   
 
 # Compile graph
 graph = builder.compile()
