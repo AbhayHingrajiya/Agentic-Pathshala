@@ -1,6 +1,6 @@
 from .state import CoachState
 from utils import load_prompt
-from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent
+from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent, coach_assignment_agent
 from agents.assignment_agent import assignment_agent
 from agents.recommendation_agent import recommendation_agent
 from memory.memory_store import MemoryStore
@@ -130,6 +130,21 @@ def recommendation_node(state: CoachState) -> dict:
             "execution_path": state.get("execution_path", []) + ["recommendation_node_error"]
         }
 
+def coach_assignment_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("coach_assignment_node")
+        state["execution_path"] = path
+        updated_state = coach_assignment_agent(state)
+        return {
+            "agent_response": updated_state.get("agent_response", "No assignment plan generated."),
+            "execution_path": updated_state.get("execution_path", path)
+        }
+    except Exception as e:
+        return {
+            "agent_response": f"Error in Coach Assignment Agent: {str(e)}",
+            "execution_path": state.get("execution_path", []) + ["coach_assignment_node_error"]
+        }
 def memory_reader_node(state: CoachState) -> dict:
     """
     Runs FIRST in the graph.

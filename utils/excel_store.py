@@ -139,6 +139,107 @@ def update_record(
  
     return updated
  
+def update_record_by_filters(
+    filename: str,
+    match_filters: dict,
+    updates: dict,
+) -> bool:
+    """
+    Update rows matching all filter conditions.
+
+    Example:
+        match_filters = {
+            "learner_id": "L001",
+            "topic": "Assignment 1"
+        }
+
+    Returns True if at least one record updated.
+    """
+
+    path = _xlsx_path(filename)
+
+    if not path.exists():
+        return False
+
+    with _get_lock(filename):
+
+        wb = load_workbook(str(path))
+        ws = wb.active
+
+        headers = [
+            str(ws.cell(row=1, column=c).value)
+            for c in range(1, ws.max_column + 1)
+        ]
+
+        col_map = {
+            h: idx + 1
+            for idx, h in enumerate(headers)
+        }
+
+        updated = False
+
+        for row in ws.iter_rows(min_row=2):
+
+            row_number = row[0].row
+
+            # Check ALL match conditions
+            is_match = True
+
+            for key, value in match_filters.items():
+
+                col_idx = col_map.get(key)
+
+                if col_idx is None:
+                    is_match = False
+                    break
+
+                cell_value = ws.cell(
+                    row=row_number,
+                    column=col_idx
+                ).value
+
+                if str(cell_value) != str(value):
+                    is_match = False
+                    break
+
+            if not is_match:
+                continue
+
+            # Update cells
+            for key, value in updates.items():
+
+                if key in col_map:
+
+                    ws.cell(
+                        row=row_number,
+                        column=col_map[key],
+                        value=value
+                    )
+
+                else:
+                    # Add new column
+                    new_col = ws.max_column + 1
+
+                    ws.cell(
+                        row=1,
+                        column=new_col,
+                        value=key
+                    )
+
+                    col_map[key] = new_col
+
+                    ws.cell(
+                        row=row_number,
+                        column=new_col,
+                        value=value
+                    )
+
+            updated = True
+
+        if updated:
+            wb.save(str(path))
+
+    return updated
  
 def delete_record(filename: str, match_key: str, match_value) -> bool:
     """

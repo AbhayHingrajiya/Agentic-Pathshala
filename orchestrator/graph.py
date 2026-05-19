@@ -1,7 +1,19 @@
 # pyrefly: ignore [missing-import]
 from langgraph.graph import StateGraph, START, END
 from .state import CoachState
-from .node import coordinator_node, notes_agent_node, assessment_agent_node, evaluator_agent_node, response_node, fallback_node, assignment_node, recommendation_node, memory_reader_node, memory_writer_node
+from .node import (
+    coordinator_node, 
+    notes_agent_node, 
+    assessment_agent_node, 
+    evaluator_agent_node, 
+    response_node, 
+    fallback_node, 
+    assignment_node, 
+    recommendation_node,
+    coach_assignment_node,
+    memory_reader_node, 
+    memory_writer_node
+)
 from .routes import route_intent
 
 # -----------------------------
@@ -17,6 +29,8 @@ builder.add_node("evaluator_agent", evaluator_agent_node)
 builder.add_node("response", response_node)
 builder.add_node("fallback", fallback_node)
 builder.add_node("assignment", assignment_node)
+builder.add_node("recommendation", recommendation_node)
+builder.add_node("coach_assignment", coach_assignment_node)
 builder.add_node("recommendation", recommendation_node) 
 builder.add_node("memory_reader", memory_reader_node)
 builder.add_node("memory_writer", memory_writer_node)
@@ -35,6 +49,7 @@ builder.add_conditional_edges(
         "recommendation": "recommendation",  
         "evaluator_agent": "evaluator_agent",
         "fallback": "fallback",
+        "coach_assignment": "coach_assignment"
     }
 )
 
@@ -44,6 +59,9 @@ builder.add_edge("recommendation", "response")
 builder.add_edge("evaluator_agent", "response")
 builder.add_edge("fallback", "response")
 builder.add_edge("assignment", "response")
+builder.add_edge("coach_assignment", "response")
+
+builder.add_edge("response", END)
 builder.add_edge("response", "memory_writer")           # ← ADD (was response → END)
 builder.add_edge("memory_writer", END)   
 

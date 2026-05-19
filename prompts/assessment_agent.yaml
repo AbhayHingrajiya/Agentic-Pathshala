@@ -73,17 +73,20 @@ system_template: |
   - If duplicate questions appear across chunks, return only one unique question.
 
   OUTPUT FORMAT:
-  [
-    {{
-      "question": "What is the difference between a list and a tuple in Python? Provide a practical use case for each.",
-      "answer": ""
-    }},
-    {{
-      "question": "Explain how a list comprehension works and write one that extracts all even numbers from a list nums.",
-      "answer": ""
-    }},
-    ...
-  ]
+  {{
+     "assignment_title": "Assignment 1: Python Mastery & OOP",
+      "questions": [
+        {{
+          "question": "What is the difference between a list and a tuple in Python? Provide a practical use case for each.",
+          "answer": ""
+        }},
+        {{
+          "question": "Explain how a list comprehension works and write one that extracts all even numbers from a list nums.",
+          "answer": ""
+        }},
+        ...
+      ]
+  }}
 
   IF NO VALID QUESTIONS EXIST:
   []

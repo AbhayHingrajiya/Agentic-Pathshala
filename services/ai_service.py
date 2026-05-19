@@ -16,34 +16,36 @@ class AIService:
     def _build_prompt(template: str, payload: str) -> str:
         return template.format(payload=payload.strip())
 
-    def invoke(self, user_input: str, learner_id: str) -> dict[str, Any]:
+    def invoke(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
+        session_data = {}
+        if session:
+            if hasattr(session, "role"):
+                session_data = {
+                    "user_id": session.user_id,
+                    "role": session.role,
+                    "name": session.name,
+                    "email": session.email
+                }
+            elif isinstance(session, dict):
+                session_data = session
+
         state = {
             "user_input": user_input,
             "learner_id": learner_id,
-            "execution_path": [] 
+            "session": session_data,
+            "execution_path": []
         }
         response = graph.invoke(state)
         return response or {}
 
-    def run_assessment(self, user_input: str, learner_id: str) -> dict[str, Any]:
+    def run_assessment(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
         prompt = self._build_prompt(ASSESSMENT_PROMPT_TEMPLATE, user_input)
-        return self.invoke(prompt, learner_id)
+        return self.invoke(prompt, learner_id, session)
 
-    def evaluate_assessment(self, questions: Iterable[dict], learner_id: str) -> dict[str, Any]:
+    def evaluate_assessment(self, questions: Iterable[dict], learner_id: str, session: Any = None) -> dict[str, Any]:
         payload = json.dumps(list(questions), indent=4)
         prompt = self._build_prompt(EVALUATOR_PROMPT_TEMPLATE, payload)
-        return self.invoke(prompt, learner_id)
+        return self.invoke(prompt, learner_id, session)
 
     def chat(self, user_input: str, learner_id: str) -> dict[str, Any]:
         return self.invoke(user_input, learner_id)
-
-    def parse_assessment_questions(self, response: dict[str, Any]) -> List[dict]:
-        raw_questions = response.get("agent_response", "[]")
-        try:
-            parsed = json.loads(raw_questions)
-            if isinstance(parsed, list):
-                return parsed
-            self._logger.warning("Assessment response was not a list: %s", type(parsed).__name__)
-        except json.JSONDecodeError as error:
-            self._logger.error("Failed to decode assessment response: %s", error)
-        return []

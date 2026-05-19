@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-
+from typing import Optional
 
 @dataclass
 class Assignment:
     assignment_id: str
-    learner_id: str
-    status: str
+    title: str
+    description: str
+    difficulty_level: str
+    creation_date: Optional[str] = None
