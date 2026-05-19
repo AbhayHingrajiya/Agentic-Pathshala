@@ -179,7 +179,7 @@ class MainApp:
         console.print("\n[bold cyan]🤖 Evaluator[/bold cyan]")
         self._display_agent_response(final_evaluation_response, learner.learner_id)
 
-    def _handle_chat(self, learner: object) -> None:
+    def _handle_chat(self, session: object) -> None:
         """
         Runs a persistent multi-turn chat session.
         User stays in chat until they type /exit or /quit.
@@ -219,7 +219,7 @@ class MainApp:
                 "[bold magenta]🧠 AI Coach is thinking...[/bold magenta]",
                 spinner="dots"
             ):
-                response = self.ai_service.chat(user_prompt, learner.learner_id)
+                response = self.ai_service.chat(user_prompt, session.user_id, session)
             # --- Display the response ---
             console.print("\n[bold cyan]🤖 AI Coach:[/bold cyan]")
             self._display_agent_response(response)
