@@ -79,16 +79,12 @@ system_template: |
   }}
 
 human_template: |
-  Learner Question and Response Pairs:
-
-  Q1. Question text
-  A1. Learner response
-
-  Q2. Question text
-  A2. Learner response
-
-  Q3. Question text
-  A3. Learner response
+  What I remember about this learner from past sessions:
+  {memory_context}
 
   Learner Responses to Evaluate:
   {query}
+variables:
+  - query
+  - context
+  - memory_context

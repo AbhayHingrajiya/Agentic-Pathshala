@@ -10,13 +10,26 @@ logger = logging.getLogger(__name__)
 
 
 
-def retrieve_documents(query: str, k: int = 5) -> list[Document]:
-    """Retrieve relevant documents from the vector store"""
+from typing import Optional
 
-    logger.info("Retrieving documents for query: %s", query)
+def retrieve_documents(query: str, learner_id: Optional[str] = None, k: int = 5) -> list[Document]:
+    """Retrieve relevant documents from the vector store with optional learner isolation"""
+
+    logger.info("Retrieving documents for query: %s (learner_id: %s)", query, learner_id)
 
     vectorstore = get_vectorstore()
-    results = vectorstore.similarity_search_with_score(query, k=k)
+    
+    # Filter documents to only include "system" documents and the current learner's notes.
+    # This prevents cross-learner data leakage.
+    query_filter = None
+    if learner_id:
+        query_filter = {
+            "learner_id": {
+                "$in": ["system", learner_id]
+            }
+        }
+
+    results = vectorstore.similarity_search_with_score(query, k=k, filter=query_filter)
 
     filtered_results = [
         (document, score)

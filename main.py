@@ -90,30 +90,32 @@ class MainApp:
             return None
         return user_prompt
 
-    def _display_agent_response(self, response: dict, learner_id: str) -> None:
-        if agent_response := response.get("assignment_title"):
+    def _display_agent_response(self, response: dict, learner_id: Optional[str] = None) -> None:
+        agent_response = response.get("agent_response") or response.get("assignment_title")
+        if agent_response:
             console.print(agent_response)
             
             assignment_title = response.get("assignment_title")
             final_score_percentage = response.get("final_score_percentage")
 
-            update_record_by_filters(
-                filename="progress.xlsx",
+            if assignment_title and final_score_percentage is not None and learner_id:
+                update_record_by_filters(
+                    filename="progress.xlsx",
 
-                match_filters={
-                    "learner_id": learner_id,
-                    "topic": assignment_title
-                },
+                    match_filters={
+                        "learner_id": learner_id,
+                        "topic": assignment_title
+                    },
 
-                updates={
-                    "score": final_score_percentage
-                }
-            )
+                    updates={
+                        "score": final_score_percentage
+                    }
+                )
 
-            console.print(
-                f"[green]Progress updated for {learner_id} - "
-                f"{assignment_title}: {final_score_percentage}%[/green]"
-            )
+                console.print(
+                    f"[green]Progress updated for {learner_id} - "
+                    f"{assignment_title}: {final_score_percentage}%[/green]"
+                )
         else:
             console.print("[red]Something went wrong with the graph![/red]")
 

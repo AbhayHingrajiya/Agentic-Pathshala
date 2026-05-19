@@ -47,5 +47,5 @@ class AIService:
         prompt = self._build_prompt(EVALUATOR_PROMPT_TEMPLATE, payload)
         return self.invoke(prompt, learner_id, session)
 
-    def chat(self, user_input: str, learner_id: str) -> dict[str, Any]:
-        return self.invoke(user_input, learner_id)
+    def chat(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
+        return self.invoke(user_input, learner_id, session)

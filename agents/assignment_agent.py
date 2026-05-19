@@ -23,7 +23,8 @@ def assignment_agent(state: dict) -> dict:
 
     response = chain.invoke({
         "learner_id": learner_id,
-        "assignment_data": str(assignment_data) if assignment_data else "No assignments found."
+        "assignment_data": str(assignment_data) if assignment_data else "No assignments found.",
+        "memory_context": state.get("memory_context", "No past memories.")
     })
 
     # Step 3: Write to agent_response (the correct CoachState key)

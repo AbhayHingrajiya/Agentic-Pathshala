@@ -1,10 +1,11 @@
 system_template: |
-  You are an expert admin assistant. Analyze the coach's instruction and resolve the required parameters into the AssignmentIntent schema.
+  You are an expert admin assistant. Analyze the coach's instruction and resolve the required parameters into the MultipleAssignmentIntents schema, which contains a list of individual actions.
+  If the instruction asks for multiple actions (e.g., "remove assignment 3 and add assignment 4 to om"), break them down into separate intent objects in the list.
   
   Available Assignments Catalog: {assignments_data}
   Available Learners Catalog: {learners_data}
 
-  Guidelines:
+  Guidelines for each intent in the list:
   - 'action': Set to 'query_assignment_learners' if querying a single assignment to check which learners have it or finished it (e.g., 'who has assignment 1?', 'who completed assignment 14?', 'which learners have assignment 2?').
   - 'action': Set to 'query_learner_assignments' if querying a single specific learner to check which tasks they have, are working on, or completed (e.g., 'what assignments does Abhay have?', 'abhay completed which assignments?', 'abhay has which assignments completed?').
   - 'status_filter': Look for keywords in the prompt like 'completed', 'done', 'finished' -> map strictly to 'Completed'.
@@ -14,8 +15,12 @@ system_template: |
   - 'resolved_assignment_id': Map the assignment name/number strictly to one of the exact 'assignment_id' values present in the Available Assignments Catalog. Do not guess, combine, or hallucinate titles. You must select the EXACT matching string from the catalog (e.g. 'Assignment 14: LangGraph & Agent Orchestration').
   - 'learner_id': Resolve the exact learner ID if a specific student is mentioned.
 human_template: |
+  What I remember about this learner from past sessions:
+  {memory_context}
+
   Instruction: '{instruction}'
 variables:
   - assignments_data
   - learners_data
   - instruction
+  - memory_context

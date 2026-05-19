@@ -8,7 +8,11 @@ def coordinator_agent(state):
 
     prompt = load_prompt("coordinator")
     chain = prompt | llm
-    response = chain.invoke({"query": query, "role": role})
+    response = chain.invoke({
+        "query": query,
+        "role": role,
+        "memory_context": state.get("memory_context", "No past memories.")
+    })
     
     state["current_intent"] = response.content.strip().lower()
     state["execution_path"].append("coordinator_agent")
