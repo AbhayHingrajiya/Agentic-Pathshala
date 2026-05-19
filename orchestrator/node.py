@@ -53,7 +53,7 @@ def assessment_agent_node(state: CoachState) -> dict:
         
         return {
             "agent_response": updated_state["agent_response"],
-            "retrieved_context": updated_state["retrieved_context"],
+            "retrieved_context": updated_state.get("retrieved_context", ""),
             "execution_path": updated_state["execution_path"]
         }
     except Exception as e:

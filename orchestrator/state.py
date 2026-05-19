@@ -1,4 +1,4 @@
-from typing import TypedDict, Dict
+from typing import TypedDict, Dict, List, Any, Optional
 
 class CoachState(TypedDict):
     session: Dict[str, str]
@@ -9,3 +9,5 @@ class CoachState(TypedDict):
     agent_response: str
     execution_path: list
     momery_context: str
+    assessment_mode: Optional[str]           
+    assessment_assignment_id: Optional[str]  

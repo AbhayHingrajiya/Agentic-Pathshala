@@ -13,7 +13,7 @@ system_template: |
   - progress_query (Learner checking progress)
   - recommendation (Learner asking for learning recommendations)
   - notes_query (Learner asking about learning concepts, personal notes, preferences, policies, or personal recorded facts/information)
-  - assessment_query (Learner wanting an assessment/quiz)
+  - assessment_query (Learner wanting to take an assessment or quiz for a specific assignment. Examples: "take my assessment", "start assessment for Assignment 13", "assess me on RAG")
   - evaluator_query (Learner wanting evaluation of answers)
   - assign_task (Coach administrative queries: assigning or removing tasks, listing assignments or learners lists, querying which learners have specific assignments/statuses, and querying which assignments are assigned to specific learners)
   - track_progress (Coach tracking student/learner progress)

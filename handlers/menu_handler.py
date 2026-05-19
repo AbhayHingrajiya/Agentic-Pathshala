@@ -22,15 +22,14 @@ class MenuHandler:
 
         table.add_row("1", "Assigned Assignment")
         table.add_row("2", "Available Assignments")
-        table.add_row("3", "Assessment")
-        table.add_row("4", "Chat with AI")
-        table.add_row("5", "Exit Application")
+        table.add_row("3", "Chat with AI")
+        table.add_row("4", "Exit Application")
 
         self.console.print(table)
 
     def prompt_choice(self) -> str:
         choice = Prompt.ask("\n[bold cyan]Enter your choice[/bold cyan]", default="1").strip()
-        if not validate_menu_choice(choice, 1, 5):
-            self.console.print("[bold red]❌ Invalid choice! Please enter 1-5.[/bold red]\n")
+        if not validate_menu_choice(choice, 1, 4):
+            self.console.print("❌ Invalid choice! Please enter 1-4.")
             return ""
         return choice

@@ -31,7 +31,10 @@ def _sheet_to_records(ws) -> tuple[list[str], list[dict]]:
     for row in rows[1:]:
         if all(v is None for v in row):
             continue
-        record = {headers[i]: row[i] for i in range(len(headers)) if i < len(row) and row[i] is not None}
+        record = {}
+        for i, h in enumerate(headers):
+            val = row[i] if i < len(row) else None
+            record[h] = val
         records.append(record)
     return headers, records
 

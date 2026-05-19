@@ -158,6 +158,35 @@ def remove_task_from_learner(learner_id: str, assignment_id: str) -> dict:
         return {"success": True, "message": f"Successfully removed {assignment_id} from {learner_id}"}
     return {"success": False, "error": "Failed to delete database record."}
 
+@mcp.tool()
+def update_learner_assignment_progress(
+    learner_id: str,
+    assignment_id: str,
+    progress_percentage: int,
+    status: str = "completed"
+) -> dict:
+    """Update a learner's assignment status and progress percentage after assessment."""
+    mappings = learner_assignment_repo.get_by_learner(learner_id)
+    target = None
+    for m in mappings:
+        if m.assignment_id.strip().lower() == assignment_id.strip().lower():
+            target = m
+            break
+    if not target:
+        return {
+            "success": False,
+            "error": f"Assignment '{assignment_id}' is not assigned to learner '{learner_id}'."
+        }
+    success = learner_assignment_repo.update(
+        target.mapping_id,
+        {"status": status, "progress_percentage": progress_percentage, "completed_date" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    )
+    if success:
+        return {
+            "success": True,
+            "message": f"Updated '{assignment_id}' for '{learner_id}': status={status}, score={progress_percentage}%"
+        }
+    return {"success": False, "error": "Failed to update record in storage."}
 
 if __name__ == "__main__":
     print("Starting MCP server...")

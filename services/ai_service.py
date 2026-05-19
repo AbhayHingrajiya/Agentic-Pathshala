@@ -1,8 +1,6 @@
-import json
-from typing import Any, Dict, Iterable, List
+from typing import Any
 
 from orchestrator.graph import graph
-from prompts.system_prompts import ASSESSMENT_PROMPT_TEMPLATE, EVALUATOR_PROMPT_TEMPLATE
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,11 +10,7 @@ class AIService:
     def __init__(self) -> None:
         self._logger = logger
 
-    @staticmethod
-    def _build_prompt(template: str, payload: str) -> str:
-        return template.format(payload=payload.strip())
-
-    def invoke(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
+    def invoke(self, user_input: str, learner_id: str, session: Any = None, **extra_state) -> dict[str, Any]:
         session_data = {}
         if session:
             if hasattr(session, "role"):
@@ -33,19 +27,11 @@ class AIService:
             "user_input": user_input,
             "learner_id": learner_id,
             "session": session_data,
-            "execution_path": []
+            "execution_path": [],
+            **extra_state    # passes assessment_mode, assessment_assignment_id, etc.
         }
         response = graph.invoke(state)
         return response or {}
-
-    def run_assessment(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
-        prompt = self._build_prompt(ASSESSMENT_PROMPT_TEMPLATE, user_input)
-        return self.invoke(prompt, learner_id, session)
-
-    def evaluate_assessment(self, questions: Iterable[dict], learner_id: str, session: Any = None) -> dict[str, Any]:
-        payload = json.dumps(list(questions), indent=4)
-        prompt = self._build_prompt(EVALUATOR_PROMPT_TEMPLATE, payload)
-        return self.invoke(prompt, learner_id, session)
 
     def chat(self, user_input: str, learner_id: str, session: Any = None) -> dict[str, Any]:
         return self.invoke(user_input, learner_id, session)
