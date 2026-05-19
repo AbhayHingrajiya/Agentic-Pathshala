@@ -2,7 +2,7 @@ import sys
 from typing import Optional
 
 from rich.align import Align
-from rich import box
+from rich import box, json
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
@@ -12,6 +12,7 @@ from config.settings import settings
 from handlers.assignment_handler import AssignmentHandler
 from handlers.login_handler import LoginHandler
 from handlers.menu_handler import MenuHandler
+from models import learner
 from rag.ingestion import ingest_documents
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_repository import LearnerRepository
@@ -19,11 +20,19 @@ from repositories.coach_repository import CoachRepository
 from services.ai_service import AIService
 from services.assignment_service import AssignmentService
 from services.auth_service import AuthService
+from utils.excel_store import update_record_by_filters
 from utils.logger import get_logger
 from utils.validator import is_non_empty_string
 
+
+import json
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 console = Console()
-logger = get_logger(__name__)
+#logger = get_logger(__name__)
 
 
 class MainApp:
@@ -81,9 +90,30 @@ class MainApp:
             return None
         return user_prompt
 
-    def _display_agent_response(self, response: dict) -> None:
-        if agent_response := response.get("agent_response"):
+    def _display_agent_response(self, response: dict, learner_id: str) -> None:
+        if agent_response := response.get("assignment_title"):
             console.print(agent_response)
+            
+            assignment_title = response.get("assignment_title")
+            final_score_percentage = response.get("final_score_percentage")
+
+            update_record_by_filters(
+                filename="progress.xlsx",
+
+                match_filters={
+                    "learner_id": learner_id,
+                    "topic": assignment_title
+                },
+
+                updates={
+                    "score": final_score_percentage
+                }
+            )
+
+            console.print(
+                f"[green]Progress updated for {learner_id} - "
+                f"{assignment_title}: {final_score_percentage}%[/green]"
+            )
         else:
             console.print("[red]Something went wrong with the graph![/red]")
 
@@ -98,11 +128,17 @@ class MainApp:
         response = self.ai_service.run_assessment(user_prompt, session.user_id, session)
         console.print("\n[bold cyan]🤖 Assessment[/bold cyan]")
 
-        assessment_questions = self.ai_service.parse_assessment_questions(response)
-        if not assessment_questions:
-            console.print("[bold red]Something went wrong while fetching assessment questions![/bold red]\n")
-            return
-
+        assignment_title = json.loads(
+            response.get("agent_response", "{}")
+        ).get("assignment_title", "")
+                
+        assessment_questions = json.loads(
+            response.get("agent_response", "{}")
+        ).get("questions", [])        
+        
+        final_score = 0.0
+        
+        
         for idx, question_data in enumerate(assessment_questions, start=1):
             console.print(
                 Panel(
@@ -115,15 +151,33 @@ class MainApp:
 
             learner_answer = Prompt.ask("[bold cyan]Enter your answer[/bold cyan]").strip()
             question_data["answer"] = learner_answer
-
-        evaluation_response = self.ai_service.evaluate_assessment(
-            assessment_questions,
-            session.user_id,
-            session
+            
+            evaluation_response = self.ai_service.evaluate_assessment(
+                [question_data],
+                learner.learner_id,
+            )
+            
+            final_score += float(
+                json.loads(
+                    evaluation_response.get("agent_response", "{}")
+                ).get("final_score_percentage", 0.0)
+            )
+                        
+            console.print(f"\n[bold magenta]Your score for this question: {final_score}%[/bold magenta]\n")
+        
+        average_score = (
+            round(final_score / len(assessment_questions), 2)
+            if assessment_questions
+            else 0.0
         )
 
+        final_evaluation_response = {
+            "assignment_title": assignment_title,
+            "final_score_percentage": average_score,
+        }
+        
         console.print("\n[bold cyan]🤖 Evaluator[/bold cyan]")
-        self._display_agent_response(evaluation_response)
+        self._display_agent_response(final_evaluation_response, learner.learner_id)
 
     def _handle_chat(self, session: object) -> None:
         """
