@@ -92,5 +92,12 @@ system_template: |
   []
 
 human_template: |
+  What I remember about this learner from past sessions:
+  {memory_context}
+
   Learner request:
   {query}
+variables:
+  - query
+  - context
+  - memory_context

@@ -1,6 +1,6 @@
 from .state import CoachState
 from utils import load_prompt
-from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent, coach_assignment_agent
+from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent, coach_assignment_agent, general_agent
 from agents.assignment_agent import assignment_agent
 from agents.recommendation_agent import recommendation_agent
 from memory.memory_store import MemoryStore
@@ -97,6 +97,21 @@ def fallback_node(state: CoachState) -> dict:
         }
     except Exception as e:
         return {"agent_response": str(e)}
+
+def general_agent_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("general_agent_node")
+        state["execution_path"] = path
+
+        updated_state = general_agent(state)
+        
+        return {
+            "agent_response": updated_state.get("agent_response", ""),
+            "execution_path": updated_state.get("execution_path", path)
+        }
+    except Exception as e:
+        return {"agent_response": f"Error in General Agent: {str(e)}"}
 
 def assignment_node(state: CoachState) -> dict:
     try:

@@ -13,7 +13,8 @@ def assessment_agent(state):
     
     response = chain.invoke({
         "context": context,
-        "query": query
+        "query": query,
+        "memory_context": state.get("memory_context", "No past memories.")
     })
     
     state["agent_response"] = response.content

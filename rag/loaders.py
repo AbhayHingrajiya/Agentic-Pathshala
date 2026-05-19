@@ -1,4 +1,5 @@
 import logging
+import re
 
 from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
@@ -27,9 +28,19 @@ def load_single_document(file_path: Path) -> list[Document]:
 
         document_type = file_path.parent.name
 
+        # Determine learner_id for isolation:
+        # If it's a personal note file (e.g., notes_L001.txt), extract L001.
+        # Otherwise, tag as "system".
+        if file_path.name.startswith("notes_"):
+            match = re.match(r"^notes_([A-Za-z0-9_]+)\.", file_path.name)
+            learner_id = match.group(1) if match else "unknown"
+        else:
+            learner_id = "system"
+
         for document in documents:
             document.metadata["source"] = file_path.name
             document.metadata["document_type"] = document_type
+            document.metadata["learner_id"] = learner_id
 
         return documents
 

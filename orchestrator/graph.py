@@ -8,6 +8,7 @@ from .node import (
     evaluator_agent_node, 
     response_node, 
     fallback_node, 
+    general_agent_node,
     assignment_node, 
     recommendation_node,
     coach_assignment_node,
@@ -28,6 +29,7 @@ builder.add_node("assessment_agent", assessment_agent_node)
 builder.add_node("evaluator_agent", evaluator_agent_node)
 builder.add_node("response", response_node)
 builder.add_node("fallback", fallback_node)
+builder.add_node("general_agent", general_agent_node)
 builder.add_node("assignment", assignment_node)
 builder.add_node("recommendation", recommendation_node)
 builder.add_node("coach_assignment", coach_assignment_node)
@@ -47,7 +49,7 @@ builder.add_conditional_edges(
         "assessment_agent": "assessment_agent",
         "recommendation": "recommendation",  
         "evaluator_agent": "evaluator_agent",
-        "fallback": "fallback",
+        "fallback": "general_agent",
         "coach_assignment": "coach_assignment"
     }
 )
@@ -57,6 +59,7 @@ builder.add_edge("assessment_agent", "response")
 builder.add_edge("recommendation", "response") 
 builder.add_edge("evaluator_agent", "response")
 builder.add_edge("fallback", "response")
+builder.add_edge("general_agent", "response")
 builder.add_edge("assignment", "response")
 builder.add_edge("coach_assignment", "response")
 

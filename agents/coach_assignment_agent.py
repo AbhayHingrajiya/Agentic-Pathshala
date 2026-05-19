@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from pydantic import BaseModel, Field
 from utils.prompt_loader import load_prompt
 from utils.llm import llm
@@ -30,6 +30,12 @@ class AssignmentIntent(BaseModel):
     status_filter: Optional[Literal["Pending", "In Progress", "Completed"]] = Field(
         None,
         description="Optional filter for assignment status (Pending, In Progress, Completed) when querying."
+    )
+
+class MultipleAssignmentIntents(BaseModel):
+    intents: List[AssignmentIntent] = Field(
+        ...,
+        description="List of one or more assignment intents/actions parsed from the coach's instruction."
     )
 
 def _resolve_assignment_id_programmatically(resolved_id: str, instruction: str, catalog: list) -> str:
@@ -65,8 +71,40 @@ def _resolve_assignment_id_programmatically(resolved_id: str, instruction: str, 
     return resolved_id
 
 def _resolve_learner_id_programmatically(resolved_id: str, instruction: str, catalog: list) -> str:
-    # 1. Prioritize explicit name mentions in the raw user instruction first
     import re
+    
+    # 1. Exact match check on the LLM's resolved ID
+    if resolved_id:
+        for item in catalog:
+            l_id = str(item.get("learner_id", ""))
+            if l_id.strip().lower() == str(resolved_id).strip().lower():
+                return l_id
+
+    # 2. Check for matching names/email inside the resolved_id itself (highly specific to this action)
+    if resolved_id:
+        res_words = re.findall(r'\b\w+\b', resolved_id.lower())
+        
+        # Check first name matches inside resolved_id
+        for item in catalog:
+            name = str(item.get("name", "")).lower()
+            first_name = name.split()[0] if name else ""
+            if first_name and first_name in res_words:
+                return item.get("learner_id")
+                
+        # Check full/part name matches inside resolved_id
+        for item in catalog:
+            name = str(item.get("name", "")).lower()
+            if name and any(part in res_words for part in name.split()):
+                return item.get("learner_id")
+                
+        # Check email prefix matches inside resolved_id
+        for item in catalog:
+            email = str(item.get("email", "")).lower()
+            email_prefix = email.split('@')[0] if email else ""
+            if email_prefix and email_prefix in res_words:
+                return item.get("learner_id")
+
+    # 3. Fallback: Prioritize explicit name mentions in the raw user instruction
     words = re.findall(r'\b\w+\b', instruction.lower())
     
     # Check for first name matches in instruction words
@@ -89,22 +127,6 @@ def _resolve_learner_id_programmatically(resolved_id: str, instruction: str, cat
         if email_prefix and email_prefix in words:
             return item.get("learner_id")
 
-    # 2. Exact match check on the LLM's resolved ID
-    if resolved_id:
-        for item in catalog:
-            l_id = str(item.get("learner_id", ""))
-            if l_id.strip().lower() == str(resolved_id).strip().lower():
-                return l_id
-
-    # 3. Check for matching names inside the resolved_id itself
-    if resolved_id:
-        res_words = re.findall(r'\b\w+\b', resolved_id.lower())
-        for item in catalog:
-            name = str(item.get("name", "")).lower()
-            first_name = name.split()[0] if name else ""
-            if first_name and first_name in res_words:
-                return item.get("learner_id")
-
     return resolved_id
 
 def coach_assignment_agent(state: dict) -> dict:
@@ -126,245 +148,248 @@ def coach_assignment_agent(state: dict) -> dict:
 
     # 2. Let the LLM parse intent and resolve assignment ID
     try:
-        structured_llm = llm.with_structured_output(AssignmentIntent)
+        structured_llm = llm.with_structured_output(MultipleAssignmentIntents)
         parser_prompt = load_prompt("coach_assignment_parser")
         chain = parser_prompt | structured_llm
-        parsed_intent = chain.invoke({
+        parsed_intents = chain.invoke({
             "assignments_data": json.dumps(assignments),
             "learners_data": json.dumps(learners),
-            "instruction": instruction
+            "instruction": instruction,
+            "memory_context": state.get("memory_context", "No past memories.")
         })
+    except Exception as e:
+        state["agent_response"] = f"❌ Failed to parse assignment instructions: {str(e)}"
+        state["execution_path"].append("coach_assignment_agent_error")
+        return state
+
+    if not parsed_intents.intents:
+        state["agent_response"] = "❌ No assignment actions could be identified from your instruction."
+        state["execution_path"].append("coach_assignment_agent_error")
+        return state
+
+    # 3. Process each intent one by one
+    execution_results = []
+    
+    for idx, parsed_intent in enumerate(parsed_intents.intents, 1):
+        # Programmatically resolve assignment and learner ID
         if parsed_intent.resolved_assignment_id:
             parsed_intent.resolved_assignment_id = _resolve_assignment_id_programmatically(
                 parsed_intent.resolved_assignment_id,
                 instruction,
                 assignments
             )
-        # Programmatically resolve learner ID to be 100% robust
         parsed_intent.learner_id = _resolve_learner_id_programmatically(
             parsed_intent.learner_id,
             instruction,
             learners
         )
-    except Exception as e:
-        state["agent_response"] = f"❌ Failed to parse assignment instructions: {str(e)}"
-        state["execution_path"].append("coach_assignment_agent_error")
-        return state
 
-    # 3. Resolve matched learners or informational queries
-    action = parsed_intent.action
+        action = parsed_intent.action
 
-    if action == "list_assignments":
-        execution_status = "🎓 **Available Assignments Catalog** 🎓\n"
-        execution_status += "=====================================\n\n"
-        for a in assignments:
-            execution_status += f"- 📝 **{a.get('assignment_id')}**\n"
-        state["agent_response"] = execution_status
-        state["execution_path"].append("coach_assignment_agent")
-        return state
+        if action == "list_assignments":
+            execution_status = f"Action {idx}: LIST_ASSIGNMENTS\n"
+            execution_status += "🎓 **Available Assignments Catalog** 🎓\n"
+            execution_status += "=====================================\n\n"
+            for a in assignments:
+                execution_status += f"- 📝 **{a.get('assignment_id')}**\n"
+            execution_results.append(execution_status)
 
-    elif action == "list_learners":
-        execution_status = "🎓 **Registered Learners Catalog** 🎓\n"
-        execution_status += "=====================================\n\n"
-        for l in learners:
-            execution_status += f"- 👤 **{l.get('name')}** ({l.get('learner_id')}) | Email: {l.get('email')} | Cohort: {l.get('cohort_group', 'None')}\n"
-        state["agent_response"] = execution_status
-        state["execution_path"].append("coach_assignment_agent")
-        return state
+        elif action == "list_learners":
+            execution_status = f"Action {idx}: LIST_LEARNERS\n"
+            execution_status += "🎓 **Registered Learners Catalog** 🎓\n"
+            execution_status += "=====================================\n\n"
+            for l in learners:
+                execution_status += f"- 👤 **{l.get('name')}** ({l.get('learner_id')}) | Email: {l.get('email')} | Cohort: {l.get('cohort_group', 'None')}\n"
+            execution_results.append(execution_status)
 
-    elif action == "query_assignment_learners":
-        assignment_id = parsed_intent.resolved_assignment_id
-        status_filter = parsed_intent.status_filter
+        elif action == "query_assignment_learners":
+            assignment_id = parsed_intent.resolved_assignment_id
+            status_filter = parsed_intent.status_filter
 
-        if not assignment_id:
-            state["agent_response"] = "❌ Failed to query: Please specify a valid assignment ID or title."
-            state["execution_path"].append("coach_assignment_agent_error")
-            return state
-
-        valid_assignment = call_mcp_tool("validate_assignment_exists", {"assignment_id": assignment_id})
-        if not valid_assignment.get("exists"):
-            state["agent_response"] = f"❌ Failed to query: Assignment `{assignment_id}` does not exist in master catalog."
-            state["execution_path"].append("coach_assignment_agent_invalid_assignment")
-            return state
-
-        filter_text = f" (Status: {status_filter})" if status_filter else ""
-        execution_status = f"🎓 **Learners Assigned to: {assignment_id}{filter_text}** 🎓\n"
-        execution_status += "=====================================\n\n"
-        found_any = False
-        for l in learners:
-            l_id = l.get("learner_id")
-            l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
-            for t in l_tasks:
-                if str(t.get("assignment_id")).strip() == str(assignment_id).strip():
-                    t_status = t.get("status", "Pending")
-                    if status_filter and t_status.lower().strip() != status_filter.lower().strip():
-                        continue
-                    execution_status += f"- ✅ **{l.get('name')}** ({l_id}) | Status: {t_status} | Progress: {t.get('progress_percentage', 0)}%\n"
-                    found_any = True
-                    break
-        if not found_any:
-            execution_status += "No learners matched the query criteria."
-
-        state["agent_response"] = execution_status
-        state["execution_path"].append("coach_assignment_agent")
-        return state
-
-    elif action == "query_learner_assignments":
-        target_id = parsed_intent.learner_id
-        status_filter = parsed_intent.status_filter
-
-        if not target_id:
-            state["agent_response"] = "❌ Failed to query: Please specify a valid learner name or ID."
-            state["execution_path"].append("coach_assignment_agent_error")
-            return state
-
-        learner_profile = next((l for l in learners if l.get("learner_id") == target_id), None)
-        if not learner_profile:
-            state["agent_response"] = f"❌ Failed to query: Learner `{target_id}` not found."
-            state["execution_path"].append("coach_assignment_agent_error")
-            return state
-
-        l_name = learner_profile.get("name")
-        filter_text = f" (Status: {status_filter})" if status_filter else ""
-        execution_status = f"🎓 **Assignments for: {l_name} ({target_id}){filter_text}** 🎓\n"
-        execution_status += "=====================================\n\n"
-
-        l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": target_id}).get("assignments", [])
-        found_any = False
-        for t in l_tasks:
-            t_status = t.get("status", "Pending")
-            if status_filter and t_status.lower().strip() != status_filter.lower().strip():
+            if not assignment_id:
+                execution_results.append(f"Action {idx}: QUERY_ASSIGNMENT_LEARNERS\n❌ Failed to query: Please specify a valid assignment ID or title.")
                 continue
-            execution_status += f"- 📝 **{t.get('assignment_id')}** | Status: {t_status} | Progress: {t.get('progress_percentage', 0)}%\n"
-            found_any = True
 
-        if not found_any:
-            execution_status += "No assignments found matching the criteria."
+            valid_assignment = call_mcp_tool("validate_assignment_exists", {"assignment_id": assignment_id})
+            if not valid_assignment.get("exists"):
+                execution_results.append(f"Action {idx}: QUERY_ASSIGNMENT_LEARNERS\n❌ Failed to query: Assignment `{assignment_id}` does not exist in master catalog.")
+                continue
 
-        state["agent_response"] = execution_status
-        state["execution_path"].append("coach_assignment_agent")
-        return state
+            filter_text = f" (Status: {status_filter})" if status_filter else ""
+            execution_status = f"Action {idx}: QUERY_ASSIGNMENT_LEARNERS\n"
+            execution_status += f"🎓 **Learners Assigned to: {assignment_id}{filter_text}** 🎓\n"
+            execution_status += "=====================================\n\n"
+            found_any = False
+            for l in learners:
+                l_id = l.get("learner_id")
+                l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
+                for t in l_tasks:
+                    if str(t.get("assignment_id")).strip() == str(assignment_id).strip():
+                        t_status = t.get("status", "Pending")
+                        if status_filter and t_status.lower().strip() != status_filter.lower().strip():
+                            continue
+                        execution_status += f"- ✅ **{l.get('name')}** ({l_id}) | Status: {t_status} | Progress: {t.get('progress_percentage', 0)}%\n"
+                        found_any = True
+                        break
+            if not found_any:
+                execution_status += "No learners matched the query criteria."
+            execution_results.append(execution_status)
 
-    # For assign and remove actions, proceed with target learners resolve
-    target_learners = []
-    assignment_id = parsed_intent.resolved_assignment_id
-    if not assignment_id:
-        state["agent_response"] = f"❌ Execution failed: Missing assignment ID for {action} action."
-        state["execution_path"].append("coach_assignment_agent_error")
-        return state
+        elif action == "query_learner_assignments":
+            target_id = parsed_intent.learner_id
+            status_filter = parsed_intent.status_filter
 
-    # Validate assignment existence first
-    valid_assignment = call_mcp_tool("validate_assignment_exists", {"assignment_id": assignment_id})
-    if not valid_assignment.get("exists"):
-        state["agent_response"] = f"❌ Execution failed: Assignment `{assignment_id}` does not exist in master catalog."
-        state["execution_path"].append("coach_assignment_agent_invalid_assignment")
-        return state
+            if not target_id:
+                execution_results.append(f"Action {idx}: QUERY_LEARNER_ASSIGNMENTS\n❌ Failed to query: Please specify a valid learner name or ID.")
+                continue
 
-    if parsed_intent.target_type == "all":
-        target_learners = learners
-        
-    elif parsed_intent.target_type == "individual":
-        target_id = parsed_intent.learner_id
-        target_learners = [
-            l for l in learners 
-            if l.get("learner_id") == target_id
-        ]
-        
-    elif parsed_intent.target_type == "cohort":
-        cohort = (parsed_intent.cohort_name or "").lower().strip()
-        target_learners = [
-            l for l in learners 
-            if l.get("cohort_group") and l.get("cohort_group").lower().strip() == cohort
-        ]
-        
-    elif parsed_intent.target_type == "completed_assignment":
-        comp_id = parsed_intent.criteria_value
-        for l in learners:
-            l_id = l.get("learner_id")
-            l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
-            is_completed = any(
-                str(t.get("assignment_id")).strip() == str(comp_id).strip() and t.get("status") == "Completed"
-                for t in l_tasks
-            )
-            if is_completed:
-                target_learners.append(l)
-                
-    elif parsed_intent.target_type == "progress_below":
-        try:
-            threshold = int(parsed_intent.criteria_value or 50)
-        except ValueError:
-            threshold = 50
-            
-        for l in learners:
-            l_id = l.get("learner_id")
-            l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
+            learner_profile = next((l for l in learners if l.get("learner_id") == target_id), None)
+            if not learner_profile:
+                execution_results.append(f"Action {idx}: QUERY_LEARNER_ASSIGNMENTS\n❌ Failed to query: Learner `{target_id}` not found.")
+                continue
+
+            l_name = learner_profile.get("name")
+            filter_text = f" (Status: {status_filter})" if status_filter else ""
+            execution_status = f"Action {idx}: QUERY_LEARNER_ASSIGNMENTS\n"
+            execution_status += f"🎓 **Assignments for: {l_name} ({target_id}){filter_text}** 🎓\n"
+            execution_status += "=====================================\n\n"
+
+            l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": target_id}).get("assignments", [])
+            found_any = False
             for t in l_tasks:
-                if int(t.get("progress_percentage", 0)) < threshold:
-                    target_learners.append(l)
-                    break
+                t_status = t.get("status", "Pending")
+                if status_filter and t_status.lower().strip() != status_filter.lower().strip():
+                    continue
+                execution_status += f"- 📝 **{t.get('assignment_id')}** | Status: {t_status} | Progress: {t.get('progress_percentage', 0)}%\n"
+                found_any = True
 
-    # 4. Execute assignments via MCP
-    results = []
-    success_count = 0
-    fail_count = 0
-    already_assigned = 0
+            if not found_any:
+                execution_status += "No assignments found matching the criteria."
+            execution_results.append(execution_status)
 
-    if not target_learners:
-        execution_status = "No learners matched the criteria."
-    else:
-        for learner in target_learners:
-            l_id = learner.get("learner_id")
-            l_name = learner.get("name")
-            try:
-                if parsed_intent.action == "remove":
-                    res = call_mcp_tool(
-                        "remove_task_from_learner",
-                        {"learner_id": l_id, "assignment_id": assignment_id}
+        else:
+            # Handle modification actions (assign and remove)
+            target_learners = []
+            assignment_id = parsed_intent.resolved_assignment_id
+            if not assignment_id:
+                execution_results.append(f"Action {idx}: {action.upper()}\n❌ Execution failed: Missing assignment ID for {action} action.")
+                continue
+
+            # Validate assignment existence first
+            valid_assignment = call_mcp_tool("validate_assignment_exists", {"assignment_id": assignment_id})
+            if not valid_assignment.get("exists"):
+                execution_results.append(f"Action {idx}: {action.upper()}\n❌ Execution failed: Assignment `{assignment_id}` does not exist in master catalog.")
+                continue
+
+            if parsed_intent.target_type == "all":
+                target_learners = learners
+                
+            elif parsed_intent.target_type == "individual":
+                target_id = parsed_intent.learner_id
+                target_learners = [
+                    l for l in learners 
+                    if l.get("learner_id") == target_id
+                ]
+                
+            elif parsed_intent.target_type == "cohort":
+                cohort = (parsed_intent.cohort_name or "").lower().strip()
+                target_learners = [
+                    l for l in learners 
+                    if l.get("cohort_group") and l.get("cohort_group").lower().strip() == cohort
+                ]
+                
+            elif parsed_intent.target_type == "completed_assignment":
+                comp_id = parsed_intent.criteria_value
+                for l in learners:
+                    l_id = l.get("learner_id")
+                    l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
+                    is_completed = any(
+                        str(t.get("assignment_id")).strip() == str(comp_id).strip() and t.get("status") == "Completed"
+                        for t in l_tasks
                     )
-                    if res.get("success"):
-                        success_count += 1
-                        results.append(f"✅ {l_name} ({l_id}): Removed successfully.")
-                    else:
-                        fail_count += 1
-                        results.append(f"❌ {l_name} ({l_id}): {res.get('error', '')}")
-                else:
-                    res = call_mcp_tool(
-                        "assign_task_to_learner",
-                        {"learner_id": l_id, "assignment_id": assignment_id, "coach_id": coach_id}
-                    )
-                    if res.get("success"):
-                        success_count += 1
-                        results.append(f"✅ {l_name} ({l_id}): Assigned successfully.")
-                    else:
-                        err = res.get("error", "")
-                        if "already assigned" in err.lower():
-                            already_assigned += 1
-                            results.append(f"⏳ {l_name} ({l_id}): Already assigned.")
+                    if is_completed:
+                        target_learners.append(l)
+                        
+            elif parsed_intent.target_type == "progress_below":
+                try:
+                    threshold = int(parsed_intent.criteria_value or 50)
+                except ValueError:
+                    threshold = 50
+                    
+                for l in learners:
+                    l_id = l.get("learner_id")
+                    l_tasks = call_mcp_tool("get_assignments_for_learner", {"learner_id": l_id}).get("assignments", [])
+                    for t in l_tasks:
+                        if int(t.get("progress_percentage", 0)) < threshold:
+                            target_learners.append(l)
+                            break
+
+            # Execute assignments/removals via MCP
+            results = []
+            success_count = 0
+            fail_count = 0
+            already_assigned = 0
+
+            if not target_learners:
+                execution_status = f"Action {idx}: {action.upper()}\nNo learners matched the criteria."
+            else:
+                for learner in target_learners:
+                    l_id = learner.get("learner_id")
+                    l_name = learner.get("name")
+                    try:
+                        if action == "remove":
+                            res = call_mcp_tool(
+                                "remove_task_from_learner",
+                                {"learner_id": l_id, "assignment_id": assignment_id}
+                            )
+                            if res.get("success"):
+                                success_count += 1
+                                results.append(f"✅ {l_name} ({l_id}): Removed successfully.")
+                            else:
+                                fail_count += 1
+                                results.append(f"❌ {l_name} ({l_id}): {res.get('error', '')}")
                         else:
-                            fail_count += 1
-                            results.append(f"❌ {l_name} ({l_id}): {err}")
-            except Exception as e:
-                fail_count += 1
-                results.append(f"❌ {l_name} ({l_id}): {str(e)}")
+                            res = call_mcp_tool(
+                                "assign_task_to_learner",
+                                {"learner_id": l_id, "assignment_id": assignment_id, "coach_id": coach_id}
+                            )
+                            if res.get("success"):
+                                success_count += 1
+                                results.append(f"✅ {l_name} ({l_id}): Assigned successfully.")
+                            else:
+                                err = res.get("error", "")
+                                if "already assigned" in err.lower():
+                                    already_assigned += 1
+                                    results.append(f"⏳ {l_name} ({l_id}): Already assigned.")
+                                else:
+                                    fail_count += 1
+                                    results.append(f"❌ {l_name} ({l_id}): {err}")
+                    except Exception as e:
+                        fail_count += 1
+                        results.append(f"❌ {l_name} ({l_id}): {str(e)}")
 
-        action_verb = "Removed" if parsed_intent.action == "remove" else "Assigned"
-        execution_status = (
-            f"Action: {parsed_intent.action.upper()}\n"
-            f"Target Category: {parsed_intent.target_type.upper()}\n"
-            f"Learners Matched: {len(target_learners)}\n"
-            f"- {action_verb} Successfully: {success_count}\n"
-            f"- Skipped / Already {action_verb}: {already_assigned}\n"
-            f"- Failed: {fail_count}\n\n"
-            "Execution Log:\n" + "\n".join(results)
-        )
+                action_verb = "Removed" if action == "remove" else "Assigned"
+                execution_status = (
+                    f"Action {idx}: {action.upper()}\n"
+                    f"Assignment: {assignment_id}\n"
+                    f"Target Category: {parsed_intent.target_type.upper() if parsed_intent.target_type else 'UNKNOWN'}\n"
+                    f"Learners Matched: {len(target_learners)}\n"
+                    f"- {action_verb} Successfully: {success_count}\n"
+                    f"- Skipped / Already {action_verb}: {already_assigned}\n"
+                    f"- Failed: {fail_count}\n\n"
+                    "Execution Log:\n" + "\n".join(results)
+                )
+            execution_results.append(execution_status)
 
-    # 5. Format response using system prompt
+    # 4. Format consolidated response using system prompt
+    combined_execution_status = "\n\n-------------------------------------\n\n".join(execution_results)
+
     prompt = load_prompt("coach_assignment_agent")
     chain = prompt | llm
     response = chain.invoke({
         "coach_id": coach_id,
         "instruction": instruction,
-        "execution_status": execution_status
+        "execution_status": combined_execution_status
     })
 
     state["agent_response"] = response.content.strip()

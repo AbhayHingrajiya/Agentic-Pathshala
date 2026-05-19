@@ -33,7 +33,16 @@ def reset_collection():
 
     vectorstore = get_vectorstore()
 
-    vectorstore.delete_collection()
+    # Safely clear all documents inside the collection instead of physically destroying the collection.
+    # This prevents orphaned UUID collection NotFoundErrors in running client processes.
+    try:
+        all_docs = vectorstore.get()
+        if all_docs and "ids" in all_docs and all_docs["ids"]:
+            vectorstore.delete(ids=all_docs["ids"])
+            logger.info("Safely cleared %d documents from collection", len(all_docs["ids"]))
+    except Exception as e:
+        logger.warning("Direct clear failed, falling back to delete_collection: %s", e)
+        vectorstore.delete_collection()
 
     _vectorstore = None
 
