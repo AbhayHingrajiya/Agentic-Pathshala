@@ -64,6 +64,49 @@ def _resolve_assignment_id_programmatically(resolved_id: str, instruction: str, 
             
     return resolved_id
 
+def _resolve_learner_id_programmatically(resolved_id: str, instruction: str, catalog: list) -> str:
+    # 1. Prioritize explicit name mentions in the raw user instruction first
+    import re
+    words = re.findall(r'\b\w+\b', instruction.lower())
+    
+    # Check for first name matches in instruction words
+    for item in catalog:
+        name = str(item.get("name", "")).lower()
+        first_name = name.split()[0] if name else ""
+        if first_name and first_name in words:
+            return item.get("learner_id")
+            
+    # Check for part of full name matches in instruction words
+    for item in catalog:
+        name = str(item.get("name", "")).lower()
+        if name and any(part in words for part in name.split()):
+            return item.get("learner_id")
+            
+    # Check for email prefix matches in instruction words
+    for item in catalog:
+        email = str(item.get("email", "")).lower()
+        email_prefix = email.split('@')[0] if email else ""
+        if email_prefix and email_prefix in words:
+            return item.get("learner_id")
+
+    # 2. Exact match check on the LLM's resolved ID
+    if resolved_id:
+        for item in catalog:
+            l_id = str(item.get("learner_id", ""))
+            if l_id.strip().lower() == str(resolved_id).strip().lower():
+                return l_id
+
+    # 3. Check for matching names inside the resolved_id itself
+    if resolved_id:
+        res_words = re.findall(r'\b\w+\b', resolved_id.lower())
+        for item in catalog:
+            name = str(item.get("name", "")).lower()
+            first_name = name.split()[0] if name else ""
+            if first_name and first_name in res_words:
+                return item.get("learner_id")
+
+    return resolved_id
+
 def coach_assignment_agent(state: dict) -> dict:
     instruction = state.get("user_input", "")
     session = state.get("session", {})
@@ -97,6 +140,12 @@ def coach_assignment_agent(state: dict) -> dict:
                 instruction,
                 assignments
             )
+        # Programmatically resolve learner ID to be 100% robust
+        parsed_intent.learner_id = _resolve_learner_id_programmatically(
+            parsed_intent.learner_id,
+            instruction,
+            learners
+        )
     except Exception as e:
         state["agent_response"] = f"❌ Failed to parse assignment instructions: {str(e)}"
         state["execution_path"].append("coach_assignment_agent_error")
@@ -315,8 +364,6 @@ def coach_assignment_agent(state: dict) -> dict:
     response = chain.invoke({
         "coach_id": coach_id,
         "instruction": instruction,
-        "learners_data": json.dumps(learners, indent=2),
-        "assignments_data": json.dumps(assignments, indent=2),
         "execution_status": execution_status
     })
 

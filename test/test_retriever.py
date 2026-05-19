@@ -6,7 +6,7 @@ from rag import retrieve_documents
 logging.basicConfig(level=logging.INFO)
 
 
-query = "What is the assignment submission policy?"
+query = "what are General Conduct Policy?"
 
 documents = retrieve_documents(query)
 

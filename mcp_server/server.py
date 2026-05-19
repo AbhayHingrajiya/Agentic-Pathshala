@@ -12,6 +12,7 @@ from repositories.learner_repository import LearnerRepository
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_assignment_repository import LearnerAssignmentRepository
 from models.learner_assignment import LearnerAssignment
+from utils.excel_store import read_records
 
 
 mcp = FastMCP(
@@ -76,6 +77,21 @@ def get_assignments_for_learner(learner_id: str) -> dict:
             } for m in mappings
         ]
     }
+
+@mcp.tool()
+def get_progress_for_learner(learner_id: str) -> dict:
+    """Get all progress/score records for a specific learner."""
+    all_progress = read_records("progress.xlsx")
+    learner_progress = [
+        p for p in all_progress
+        if str(p.get("learner_id", "")).strip() == str(learner_id).strip()
+    ]
+    return {
+        "learner_id": learner_id,
+        "count": len(learner_progress),
+        "progress": learner_progress
+    }
+
 
 
 @mcp.tool()
