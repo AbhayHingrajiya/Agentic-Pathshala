@@ -1,51 +1,42 @@
-from typing import List
-
-from mcp_server.server import get_assignments, get_assignments_for_learner
+from typing import List, Optional
 from models.assignment import Assignment
-
+from utils.excel_store import read_records, write_record, update_record, delete_record, get_record
 
 class AssignmentRepository:
     def __init__(self) -> None:
-        self._assignments = [self._to_assignment(record) for record in get_assignments().get("assignments", [])]
+        self.filename = "assignments.xlsx"
 
-    @staticmethod
-    def _to_assignment(record: dict) -> Assignment:
+    def _to_assignment(self, record: dict) -> Assignment:
         return Assignment(
             assignment_id=str(record.get("assignment_id", "")).strip(),
-            learner_id=str(record.get("learner_id", "")).strip(),
-            status=str(record.get("status", "")).strip(),
+            title=str(record.get("title", "")).strip(),
+            description=str(record.get("description", "")).strip(),
+            difficulty_level=str(record.get("difficulty_level", "")).strip(),
+            creation_date=str(record.get("creation_date", "")).strip() if record.get("creation_date") else None,
         )
 
     def all(self) -> List[Assignment]:
-        return list(self._assignments)
+        records = read_records(self.filename)
+        return [self._to_assignment(record) for record in records]
 
-    def get_assigned(self, learner_id: str) -> List[Assignment]:
-        learner_id = str(learner_id).strip()
-        return [self._to_assignment(record) for record in get_assignments_for_learner(learner_id).get("assignments", [])]
+    def get(self, assignment_id: str) -> Optional[Assignment]:
+        record = get_record(self.filename, "assignment_id", assignment_id)
+        if record:
+            return self._to_assignment(record)
+        return None
 
-    def get_available(self, learner_id: str) -> List[Assignment]:
-        learner_id = str(learner_id).strip()
-        # Assigned assignments for learner
-        assigned_assignments = [
-            self._to_assignment(record)
-            for record in get_assignments_for_learner(learner_id).get("assignments", [])
-        ]
-
-        # All available assignments
-        available_assignments = [
-            self._to_assignment(record)
-            for record in get_assignments().get("assignments", [])
-        ]
-
-        # Remove already assigned assignments from available assignments
-        assigned_ids = {
-            assignment.assignment_id
-            for assignment in assigned_assignments
+    def create(self, assignment: Assignment) -> None:
+        record = {
+            "assignment_id": assignment.assignment_id,
+            "title": assignment.title,
+            "description": assignment.description,
+            "difficulty_level": assignment.difficulty_level,
+            "creation_date": assignment.creation_date
         }
+        write_record(self.filename, record)
 
-        learner_available_assignments = [
-            assignment
-            for assignment in available_assignments
-            if assignment.assignment_id not in assigned_ids
-        ]
-        return learner_available_assignments
+    def update(self, assignment_id: str, updates: dict) -> bool:
+        return update_record(self.filename, "assignment_id", assignment_id, updates)
+
+    def delete(self, assignment_id: str) -> bool:
+        return delete_record(self.filename, "assignment_id", assignment_id)

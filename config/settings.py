@@ -18,10 +18,11 @@ class Settings(BaseSettings):
 
     # Vector DB
     COLLECTION_NAME: str = "learning_coach_kb"
+    MEMORY_COLLECTION_NAME: str = "learner_memory"
 
     # MCP
     MCP_SERVER_URL: str = "http://localhost:8000"
-      
+    
     TEMPERATURE: float = 0.2
 
     MAX_SIMILARITY_SCORE: float = 1.2

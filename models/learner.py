@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from typing import Optional
 
 @dataclass
 class Learner:
@@ -7,3 +7,5 @@ class Learner:
     name: str
     email: str
     password: str
+    assigned_coach_id: Optional[str] = None
+    cohort_group: Optional[str] = None
