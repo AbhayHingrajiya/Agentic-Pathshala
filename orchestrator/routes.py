@@ -18,7 +18,7 @@ def route_intent(state):
         "evaluation_request": "evaluation_agent",
         "notes_query": "notes_agent",
         "assessment_query": "assessment_agent",
-        "evaluator_query": "evaluator_agent",
+        "evaluator_query": "assessment_agent",
         "assign_task": "coach_assignment"
     }
 
