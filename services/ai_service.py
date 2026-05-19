@@ -37,14 +37,3 @@ class AIService:
 
     def chat(self, user_input: str, learner_id: str) -> dict[str, Any]:
         return self.invoke(user_input, learner_id)
-
-    def parse_assessment_questions(self, response: dict[str, Any]) -> List[dict]:
-        raw_questions = response.get("agent_response", "[]")
-        try:
-            parsed = json.loads(raw_questions)
-            if isinstance(parsed, list):
-                return parsed
-            self._logger.warning("Assessment response was not a list: %s", type(parsed).__name__)
-        except json.JSONDecodeError as error:
-            self._logger.error("Failed to decode assessment response: %s", error)
-        return []

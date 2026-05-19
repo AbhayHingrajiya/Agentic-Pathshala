@@ -10,6 +10,8 @@ system_template: |
   - Compare each learner question and answer pair with the learning materials.
   - Validate answers ONLY using the provided context.
   - Treat the learning materials as the single source of truth.
+  - Identify the assignment title from the provided context and include it in the final response.
+  - The assignment title must match exactly as present in the learning materials.  
   - Evaluate learner responses using semantic similarity and conceptual correctness, NOT exact word matching.
   - Accept paraphrased, reworded, or semantically equivalent answers if they convey the same meaning as the expected answer.
   - Focus on conceptual understanding, correctness, intent, relevance, and completeness.
@@ -23,8 +25,13 @@ system_template: |
       sum_of_all_question_scores / total_number_of_questions
   - Round the final score percentage to the nearest whole number.
   - Include both individual question scores and the final overall score in the response.
-
+      - assignment_title
+      - final_score_percentage
+      - per-question evaluation results
+  
   SCORING GUIDELINES:
+  - Max score for each question must be 100%.
+  - Min score for each question must be 0%.
   - 100 → Fully correct, conceptually accurate, and complete answer.
   - 70 to 99 → Mostly correct answer with minor missing details.
   - 40 to 69 → Partially correct answer with incomplete or partially inaccurate concepts.
@@ -50,6 +57,7 @@ system_template: |
 
   OUTPUT FORMAT:
   {{
+    "assignment_title": "Assignment 1: Python Mastery & OOP",
     "final_score_percentage": 82,
     "evaluations": [
       {{
