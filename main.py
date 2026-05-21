@@ -24,9 +24,11 @@ from utils.validator import is_non_empty_string
 
 
 import json
+from utils.chat_history_manager import ChatHistoryManager
+
+
+
 import logging
-
-
 logger = logging.getLogger(__name__)
 
 console = Console()
@@ -54,8 +56,7 @@ class MainApp:
         """Display application banner"""
 
         banner = Text(
-            "🎓 Agentic Pathshala - AI Learning Coach",
-            style="bold cyan"
+            "Agentic Pathshala - AI Learning Coach",
         )
 
         console.print(
@@ -119,6 +120,8 @@ class MainApp:
                         padding=(1, 1),
                     )
                 )
+                # Clear chat history for this user session
+                ChatHistoryManager.reset()
                 break   # ← exits the while loop, returns to run() main menu
             # --- Skip empty input ---
             if not user_prompt:

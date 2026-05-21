@@ -180,7 +180,8 @@ def memory_reader_node(state: CoachState) -> dict:
         memories = memory_store.retrieve_memories(
             learner_id=learner_id,
             query=user_input,
-            k=5
+            k=settings.MAX_RETRIEVED_MEMORIES,
+            score_threshold=settings.MAX_SIMILARITY_SCORE_MEMORIES
         )
         if memories:
             memory_context = "What I remember about this learner:\n" + "\n".join(

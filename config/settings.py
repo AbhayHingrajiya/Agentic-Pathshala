@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     TEMPERATURE: float = 0.2
 
     MAX_SIMILARITY_SCORE: float = 1.5
+    MAX_RETRIEVED_MEMORIES: int = 5
+    MAX_SIMILARITY_SCORE_MEMORIES: float = 1
 
     #Settings Config
     model_config = SettingsConfigDict(

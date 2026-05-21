@@ -1,6 +1,7 @@
 import uuid
 import logging
 import hashlib
+from typing import Optional
 from datetime import datetime
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -27,44 +28,44 @@ def get_memory_store() -> Chroma:
         logger.info("Memory store loaded.")
     return _memory_store
 
-def _content_hash(self, text: str):
-    """
-    Creates a short unique ID for a memory text.
-    Why MD5? Not for security — just for fast, deterministic deduplication.
-    Two identical memory strings will always produce the same hash.
-    """
-    return hashlib.md5(text.strip().lower().encode()).hexdigest()
-
-def save_memory_if_new(self, learner_id: str, memory_text: str) -> bool:
-    """
-    Saves a memory ONLY if semantically identical content doesn't already exist.
-    Strategy: Use the content hash as the ChromaDB document ID.
-    ChromaDB IDs must be unique — if we try to add a duplicate ID, it will
-    raise an error. We catch that error and return False (already exists).
-    Why not query first?
-    Querying ChromaDB for each memory before saving costs a vector search.
-    Using IDs is O(1) and deterministic.
-    Returns True if saved, False if already existed.
-    """
-    store = get_memory_store()
-    doc_id = f"{learner_id}_{self._content_hash(memory_text)}"
-    doc = Document(
-        page_content=memory_text,
-        metadata={
-            "learner_id": learner_id,
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-    )
-    try:
-        store.add_documents(documents=[doc], ids=[doc_id])
-        logger.info("Memory saved [%s]: %s", learner_id, memory_text)
-        return True
-    except Exception:
-        # ChromaDB raises if ID already exists → memory is a duplicate
-        logger.debug("Memory already exists, skipping [%s]: %s", learner_id, memory_text)
-        return False    
-
 class MemoryStore:
+
+    def _content_hash(self, text: str):
+        """
+        Creates a short unique ID for a memory text.
+        Why MD5? Not for security — just for fast, deterministic deduplication.
+        Two identical memory strings will always produce the same hash.
+        """
+        return hashlib.md5(text.strip().lower().encode()).hexdigest()
+
+    def save_memory_if_new(self, learner_id: str, memory_text: str) -> bool:
+        """
+        Saves a memory ONLY if semantically identical content doesn't already exist.
+        Strategy: Use the content hash as the ChromaDB document ID.
+        ChromaDB IDs must be unique — if we try to add a duplicate ID, it will
+        raise an error. We catch that error and return False (already exists).
+        Why not query first?
+        Querying ChromaDB for each memory before saving costs a vector search.
+        Using IDs is O(1) and deterministic.
+        Returns True if saved, False if already existed.
+        """
+        store = get_memory_store()
+        doc_id = f"{learner_id}_{self._content_hash(memory_text)}"
+        doc = Document(
+            page_content=memory_text,
+            metadata={
+                "learner_id": learner_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
+        try:
+            store.add_documents(documents=[doc], ids=[doc_id])
+            logger.info("Memory saved [%s]: %s", learner_id, memory_text)
+            return True
+        except Exception:
+            # ChromaDB raises if ID already exists → memory is a duplicate
+            logger.debug("Memory already exists, skipping [%s]: %s", learner_id, memory_text)
+            return False    
 
     def save_memory(self, learner_id: str, memory_text: str) -> None:
         """
@@ -85,20 +86,25 @@ class MemoryStore:
         logger.info("Memory saved for learner %s: %s", learner_id, memory_text)
 
 
-    def retrieve_memories(self, learner_id: str, query: str, k: int = 5) -> list[str]:
+    def retrieve_memories(self, learner_id: str, query: str, k: int = 5, score_threshold: Optional[float] = None) -> list[str]:
         """
         Retrieves the most semantically relevant past memories for a learner.
+        Only returns memories with a similarity distance <= score_threshold.
         Why filter by learner_id? So L001's memories are never shown to L002.
         Why semantic search (not just load all)? Returns only RELEVANT memories
         for the current conversation — not everything ever stored.
         """
+        if score_threshold is None:
+            score_threshold = settings.MAX_SIMILARITY_SCORE
+
         store = get_memory_store()
-        results = store.similarity_search(
+        results = store.similarity_search_with_score(
             query=query,
             k=k,
             filter={"learner_id": learner_id}  
         )
-        return [doc.page_content for doc in results]
+        # In Chroma, lower score = higher similarity (distance). We filter for score <= threshold.
+        return [doc.page_content for doc, score in results if score <= score_threshold]
 
     def get_all_memories(self, learner_id: str) -> list[str]:
         """
