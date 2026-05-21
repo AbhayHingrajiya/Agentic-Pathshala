@@ -20,16 +20,14 @@ class MenuHandler:
         table.add_column("Option", style="bold green", justify="center")
         table.add_column("Feature", style="bold white")
 
-        table.add_row("1", "Assigned Assignment")
-        table.add_row("2", "Available Assignments")
-        table.add_row("3", "Chat with AI")
-        table.add_row("4", "Exit Application")
+        table.add_row("1", "Chat with AI")
+        table.add_row("2", "Exit Application")
 
         self.console.print(table)
 
     def prompt_choice(self) -> str:
         choice = Prompt.ask("\n[bold cyan]Enter your choice[/bold cyan]", default="1").strip()
-        if not validate_menu_choice(choice, 1, 4):
-            self.console.print("❌ Invalid choice! Please enter 1-4.")
+        if not validate_menu_choice(choice, 1, 2):
+            self.console.print("❌ Invalid choice! Please enter 1 or 2.")
             return ""
         return choice
