@@ -9,7 +9,6 @@ from rich.prompt import Prompt
 from rich.text import Text
 
 from config.settings import settings
-from handlers.assignment_handler import AssignmentHandler
 from handlers.login_handler import LoginHandler
 from handlers.menu_handler import MenuHandler
 from rag.ingestion import ingest_documents
@@ -45,7 +44,6 @@ class MainApp:
 
         self.menu_handler = MenuHandler(console)
         self.login_handler = LoginHandler(auth_service, console)
-        self.assignment_handler = AssignmentHandler(assignment_service, console)
         ingest_documents()
 
         logger.info("Configuration loaded from %s", settings.MCP_SERVER_URL)
@@ -304,13 +302,8 @@ class MainApp:
 
             try:
                 if choice == "1":
-                    console.print("\n[bold blue]📂 Fetching assignments...[/bold blue]\n")
-                    self.assignment_handler.view_assigned_assignments(session.user_id)
-                elif choice == "2":
-                    self.assignment_handler.view_available_assignments(session.user_id)
-                elif choice == "3":
                     self._handle_chat(session)
-                elif choice == "4":
+                elif choice == "2":
                     self._exit_application()
                 else:
                     console.print("[bold red]❌ Invalid option selected.[/bold red]\n")

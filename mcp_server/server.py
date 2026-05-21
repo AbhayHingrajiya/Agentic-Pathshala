@@ -188,6 +188,18 @@ def update_learner_assignment_progress(
         }
     return {"success": False, "error": "Failed to update record in storage."}
 
+@mcp.tool()
+def get_notes_for_learner(learner_id: str) -> dict:
+    """Get all past notes/memories for a specific learner."""
+    from memory.memory_store import MemoryStore
+    store = MemoryStore()
+    notes = store.get_all_memories(learner_id)
+    return {
+        "learner_id": learner_id,
+        "count": len(notes),
+        "notes": notes
+    }
+
 if __name__ == "__main__":
     print("Starting MCP server...")
     mcp.run(
