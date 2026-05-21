@@ -10,7 +10,6 @@ from rich.text import Text
 
 from config.settings import settings
 from handlers.login_handler import LoginHandler
-from handlers.menu_handler import MenuHandler
 from rag.ingestion import ingest_documents
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_repository import LearnerRepository
@@ -42,7 +41,6 @@ class MainApp:
         assignment_service = AssignmentService(assignment_repository)
         self.ai_service = AIService()
 
-        self.menu_handler = MenuHandler(console)
         self.login_handler = LoginHandler(auth_service, console)
         ingest_documents()
 
@@ -76,7 +74,9 @@ class MainApp:
             return None
 
         # Display is handled in LoginHandler, so we just run
-        self.run(session)
+        self._handle_chat(session)
+        session = None
+        self.login()
         return session
 
     def _request_user_prompt(self) -> Optional[str]:
@@ -117,6 +117,7 @@ class MainApp:
                         padding=(1, 1),
                     )
                 )
+                
                 break   # ← exits the while loop, returns to run() main menu
             # --- Skip empty input ---
             if not user_prompt:
@@ -292,25 +293,6 @@ class MainApp:
                 console.print(f"[yellow]⚠️ Could not save progress: {result.get('error')}[/yellow]\n")
         except Exception as e:
             console.print(f"[yellow]⚠️ Progress update failed: {e}[/yellow]\n")
-
-    def run(self, session: object) -> None:
-        while True:
-            self.menu_handler.display_menu()
-            choice = self.menu_handler.prompt_choice()
-            if not choice:
-                continue
-
-            try:
-                if choice == "1":
-                    self._handle_chat(session)
-                elif choice == "2":
-                    self._exit_application()
-                else:
-                    console.print("[bold red]❌ Invalid option selected.[/bold red]\n")
-            except Exception:
-                logger.exception("Unexpected error during menu execution")
-                console.print("[bold red]An unexpected error occurred. Please try again.[/bold red]\n")
-
 
 if __name__ == "__main__":
     app = MainApp()
