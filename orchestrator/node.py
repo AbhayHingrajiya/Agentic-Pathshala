@@ -1,3 +1,4 @@
+from config import settings
 from .state import CoachState
 from utils import load_prompt
 from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent, coach_assignment_agent, general_agent

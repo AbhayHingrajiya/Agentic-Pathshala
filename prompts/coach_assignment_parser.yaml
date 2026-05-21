@@ -14,6 +14,7 @@ system_template: |
     If no status filter keyword is mentioned, leave it as None.
   - 'resolved_assignment_id': Map the assignment name/number strictly to one of the exact 'assignment_id' values present in the Available Assignments Catalog. Do not guess, combine, or hallucinate titles. You must select the EXACT matching string from the catalog (e.g. 'Assignment 14: LangGraph & Agent Orchestration').
   - 'learner_id': Resolve the exact learner ID if a specific student is mentioned.
+  - 'target_type': Must be set for 'assign' or 'remove' actions. Use 'individual' if a specific learner is mentioned, 'all' for all learners, or 'cohort' for a specific cohort.
 human_template: |
   What I remember about this learner from past sessions:
   {memory_context}

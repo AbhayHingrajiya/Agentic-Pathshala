@@ -81,7 +81,7 @@ def get_assignments_for_learner(learner_id: str) -> dict:
 @mcp.tool()
 def get_progress_for_learner(learner_id: str) -> dict:
     """Get all progress/score records for a specific learner."""
-    all_progress = read_records("progress.xlsx")
+    all_progress = read_records("learner_assignments.xlsx")
     learner_progress = [
         p for p in all_progress
         if str(p.get("learner_id", "")).strip() == str(learner_id).strip()
