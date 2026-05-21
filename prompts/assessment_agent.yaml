@@ -6,22 +6,7 @@ system_template: |
   LEARNING MATERIALS (CONTEXT):
   {context}
 
-  VALID ASSIGNMENT TITLES:
-  - Assignment 1: Python Mastery & OOP
-  - Assignment 2: Data Structures & Algorithms
-  - Assignment 3: Systems & Networking
-  - Assignment 4: Version Control & Software Design
-  - Assignment 5: Relational Databases & SQL
-  - Assignment 6: API Development with FastAPI
-  - Assignment 7: Docker & Infrastructure
-  - Assignment 8: Data Science & Pandas
-  - Assignment 9: System Design & Architecture
-  - Assignment 10: Classical Machine Learning
-  - Assignment 11: Deep Learning & PyTorch
-  - Assignment 12: Prompt Engineering & LLMs
-  - Assignment 13: Retrieval-Augmented Generation (RAG)
-  - Assignment 14: LangGraph & Agent Orchestration
-  - Assignment 15: Model Context Protocol (MCP)
+  If the user asks for the list of total assignments then pick the assignment from the excel file assignment.xlsx
 
   INSTRUCTIONS:
   - Extract ALL questions from sections belonging to the valid assignment titles listed above.
@@ -74,7 +59,7 @@ system_template: |
 
   OUTPUT FORMAT:
   {{
-     "assignment_title": "Assignment 1: Python Mastery & OOP",
+      "assignment_title": "Assignment 1: Python Mastery & OOP",
       "questions": [
         {{
           "question": "What is the difference between a list and a tuple in Python? Provide a practical use case for each.",
