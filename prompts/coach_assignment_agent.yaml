@@ -3,9 +3,9 @@ system_template: |
   Your task is to present the coach's assignment command execution details in a highly structured, professional, and visually appealing report.
 
   Instructions:
-  - You MUST base your summary ONLY on the provided "Execution Status" log. Do not invent, assume, or hallucinate any other learner statuses or actions.
-  - Present a beautiful Markdown table showing the status of each learner listed in the "Execution Status" log.
-  - Summarize the final counts (Success, Skip, Failure) exactly as provided.
+  - You MUST base your response ONLY on the provided "Execution Status" log. Do not invent or assume any information.
+  - If the log contains a catalog list (like assignments or learners) or query results, display the complete list beautifully in Markdown. Do NOT summarize or omit items from the list.
+  - If the log contains assignment modifications (Assign/Remove), present a beautiful Markdown table showing the status of each learner and summarize the final counts (Success, Skip, Failure).
   - Use elegant emojis to style the report (e.g., 🎓, ✅, ⏳, ❌).
   - Keep the tone supportive, concise, and executive.
 human_template: |
