@@ -98,13 +98,17 @@ class MemoryStore:
             score_threshold = settings.MAX_SIMILARITY_SCORE
 
         store = get_memory_store()
-        results = store.similarity_search_with_score(
-            query=query,
-            k=k,
-            filter={"learner_id": learner_id}  
-        )
-        # In Chroma, lower score = higher similarity (distance). We filter for score <= threshold.
-        return [doc.page_content for doc, score in results if score <= score_threshold]
+        try:
+            results = store.similarity_search_with_score(
+                query=query,
+                k=k,
+                filter={"learner_id": learner_id}  
+            )
+            # In Chroma, lower score = higher similarity (distance). We filter for score <= threshold.
+            return [doc.page_content for doc, score in results if score <= score_threshold]
+        except Exception as e:
+            logger.error("Error retrieving memories for %s: %s", learner_id, e)
+            return []
 
     def get_all_memories(self, learner_id: str) -> list[str]:
         """
@@ -112,10 +116,14 @@ class MemoryStore:
         Not used in normal graph flow.
         """
         store = get_memory_store()
-        results = store.similarity_search(
-            query="learner history",
-            k=100,
-            filter={"learner_id": learner_id}
-        )
-        return [doc.page_content for doc in results]
+        try:
+            results = store.similarity_search(
+                query="learner history",
+                k=100,
+                filter={"learner_id": learner_id}
+            )
+            return [doc.page_content for doc in results]
+        except Exception as e:
+            logger.error("Error retrieving all memories for %s: %s", learner_id, e)
+            return []
 
