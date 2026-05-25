@@ -9,9 +9,7 @@ from rich.prompt import Prompt
 from rich.text import Text
 
 from config.settings import settings
-from handlers.assignment_handler import AssignmentHandler
 from handlers.login_handler import LoginHandler
-from handlers.menu_handler import MenuHandler
 from rag.ingestion import ingest_documents
 from repositories.assignment_repository import AssignmentRepository
 from repositories.learner_repository import LearnerRepository
@@ -45,9 +43,7 @@ class MainApp:
         assignment_service = AssignmentService(assignment_repository)
         self.ai_service = AIService()
 
-        self.menu_handler = MenuHandler(console)
         self.login_handler = LoginHandler(auth_service, console)
-        self.assignment_handler = AssignmentHandler(assignment_service, console)
         ingest_documents()
 
         logger.info("Configuration loaded from %s", settings.MCP_SERVER_URL)
@@ -79,7 +75,9 @@ class MainApp:
             return None
 
         # Display is handled in LoginHandler, so we just run
-        self.run(session)
+        self._handle_chat(session)
+        session = None
+        self.login()
         return session
 
     def _request_user_prompt(self) -> Optional[str]:
@@ -297,30 +295,6 @@ class MainApp:
                 console.print(f"[yellow]⚠️ Could not save progress: {result.get('error')}[/yellow]\n")
         except Exception as e:
             console.print(f"[yellow]⚠️ Progress update failed: {e}[/yellow]\n")
-
-    def run(self, session: object) -> None:
-        while True:
-            self.menu_handler.display_menu()
-            choice = self.menu_handler.prompt_choice()
-            if not choice:
-                continue
-
-            try:
-                if choice == "1":
-                    console.print("\n[bold blue]📂 Fetching assignments...[/bold blue]\n")
-                    self.assignment_handler.view_assigned_assignments(session.user_id)
-                elif choice == "2":
-                    self.assignment_handler.view_available_assignments(session.user_id)
-                elif choice == "3":
-                    self._handle_chat(session)
-                elif choice == "4":
-                    self._exit_application()
-                else:
-                    console.print("[bold red]❌ Invalid option selected.[/bold red]\n")
-            except Exception:
-                logger.exception("Unexpected error during menu execution")
-                console.print("[bold red]An unexpected error occurred. Please try again.[/bold red]\n")
-
 
 if __name__ == "__main__":
     app = MainApp()

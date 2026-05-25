@@ -105,15 +105,38 @@ def _fetch_questions(state: dict) -> dict:
     if not resolved_id:
         resolved_id = _fuzzy_match(user_input, learner_assignment_ids)
 
+    match = re.search(r"%assignment%\d+", user_input)
+
     if not resolved_id:
-        # Cannot identify the assignment → ask the user to specify
+        # Cannot identify the assignment in the user's list.
+        # Let's check if they specified an assignment that exists globally but isn't assigned to them.
+        try:
+            global_result = call_mcp_tool("get_assignments", {})
+            global_ids = [a["assignment_id"].strip() for a in global_result.get("assignments", [])]
+            global_match = _fuzzy_match(user_input, global_ids)
+        except Exception:
+            global_match = None
+            
         titles_str = "\n".join(f"  • {aid}" for aid in sorted(learner_assignment_ids))
-        state["agent_response"] = (
-            "Sure! I'd love to start your assessment. "
-            "Which assignment would you like to be assessed on?\n\n"
-            f"Your assigned assignments:\n{titles_str}\n\n"
-            "Please type something like: 'take my assessment of Assignment 1: Python Mastery & OOP'"
-        )
+        
+        # Also check if they explicitly typed "assignment X" which doesn't exist at all
+        user_lower = user_input.lower()
+        has_assignment_keyword = "assignment" in user_lower and re.search(r'\d+', user_lower)
+
+        if global_match or has_assignment_keyword:
+            state["agent_response"] = (
+                "This particular assignment is not assigned to you or does not exist.\n"
+                "Please refer to the below assignments that are assigned to you:\n\n"
+                f"{titles_str}\n\n"
+                "Please type something like: 'take my assessment of Assignment 1: Python Mastery & OOP'"
+            )
+        else:
+            state["agent_response"] = (
+                "Sure! I'd love to start your assessment. "
+                "Which assignment would you like to be assessed on?\n\n"
+                f"Your assigned assignments:\n{titles_str}\n\n"
+                "Please type something like: 'take my assessment of Assignment 1: Python Mastery & OOP'"
+            )
         state["execution_path"].append("assessment_agent:ask_assignment")
         return state
 

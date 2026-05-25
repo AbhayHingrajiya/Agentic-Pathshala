@@ -13,7 +13,8 @@ from .node import (
     recommendation_node,
     coach_assignment_node,
     memory_reader_node, 
-    memory_writer_node
+    memory_writer_node,
+    progress_agent_node
 )
 from .routes import route_intent
 
@@ -35,6 +36,7 @@ builder.add_node("recommendation", recommendation_node)
 builder.add_node("coach_assignment", coach_assignment_node)
 builder.add_node("memory_reader", memory_reader_node)
 builder.add_node("memory_writer", memory_writer_node)
+builder.add_node("progress_agent", progress_agent_node)
 
 # 2. Start edge
 builder.add_edge(START, "memory_reader")                
@@ -46,6 +48,7 @@ builder.add_conditional_edges(
     {
         "notes_agent": "notes_agent",
         "assignment": "assignment",
+        "progress_agent": "progress_agent",
         "assessment_agent": "assessment_agent",
         "recommendation": "recommendation",  
         "evaluator_agent": "evaluator_agent",
@@ -62,6 +65,7 @@ builder.add_edge("fallback", "response")
 builder.add_edge("general_agent", "response")
 builder.add_edge("assignment", "response")
 builder.add_edge("coach_assignment", "response")
+builder.add_edge("progress_agent", "response")
 
 builder.add_edge("response", "memory_writer")    
 builder.add_edge("memory_writer", END)   

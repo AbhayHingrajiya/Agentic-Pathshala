@@ -81,7 +81,7 @@ def get_assignments_for_learner(learner_id: str) -> dict:
 @mcp.tool()
 def get_progress_for_learner(learner_id: str) -> dict:
     """Get all progress/score records for a specific learner."""
-    all_progress = read_records("progress.xlsx")
+    all_progress = read_records("learner_assignments.xlsx")
     learner_progress = [
         p for p in all_progress
         if str(p.get("learner_id", "")).strip() == str(learner_id).strip()
@@ -187,6 +187,18 @@ def update_learner_assignment_progress(
             "message": f"Updated '{assignment_id}' for '{learner_id}': status={status}, score={progress_percentage}%"
         }
     return {"success": False, "error": "Failed to update record in storage."}
+
+@mcp.tool()
+def get_notes_for_learner(learner_id: str) -> dict:
+    """Get all past notes/memories for a specific learner."""
+    from memory.memory_store import MemoryStore
+    store = MemoryStore()
+    notes = store.get_all_memories(learner_id)
+    return {
+        "learner_id": learner_id,
+        "count": len(notes),
+        "notes": notes
+    }
 
 if __name__ == "__main__":
     print("Starting MCP server...")

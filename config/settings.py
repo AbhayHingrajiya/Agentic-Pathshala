@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     STORE_PATH: Path = BASE_DIR / "data" / "storage"
 
     # Models
-    MODEL_NAME: str = "llama-3.3-70b-versatile"
+    MODEL_NAME: str = "llama-3.1-8b-instant"
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Vector DB

@@ -4,6 +4,7 @@ system_template: |
   Your job:
   - If query contains question-answer JSON, return evaluator_query intent.
   - Classify the user intent based on the user's query and their active role.
+  - also analysis chat histories for better routing of which agent to use for current query.
   - Decide which specialized agent should handle the request.
   
   Current User Role: {role}

@@ -1,6 +1,8 @@
+from config import settings
 from .state import CoachState
 from utils import load_prompt
 from agents import coordinator_agent, notes_agent, assessment_agent, evaluator_agent, coach_assignment_agent, general_agent
+from agents.progress_agent import progress_agent
 from agents.assignment_agent import assignment_agent
 from agents.recommendation_agent import recommendation_agent
 from memory.memory_store import MemoryStore
@@ -233,4 +235,22 @@ def memory_writer_node(state: CoachState) -> dict:
         # Never crash here — memory saving is non-critical
         return {
             "execution_path": state.get("execution_path", []) + ["memory_writer_error"]
+        }
+
+def progress_agent_node(state: CoachState) -> dict:
+    try:
+        path = state.get("execution_path", [])
+        path.append("progress_agent_node")
+        state["execution_path"] = path
+        
+        updated_state = progress_agent(state)
+        
+        return {
+            "agent_response": updated_state.get("agent_response", "No progress report generated."),
+            "execution_path": updated_state.get("execution_path", path)
+        }
+    except Exception as e:
+        return {
+            "agent_response": f"Error in Progress Agent: {str(e)}",
+            "execution_path": state.get("execution_path", []) + ["progress_agent_node_error"]
         }
