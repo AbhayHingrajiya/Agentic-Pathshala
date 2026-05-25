@@ -24,9 +24,16 @@ def test_learner_blocked():
     
     result = graph.invoke(state)
     print("Execution Path Taken:", result.get("execution_path"))
-    print("Agent Response:\n", result.get("agent_response"))
-    assert "fallback_node" in result.get("execution_path")
-    print("✅ TEST 1 PASSED: Learner was correctly blocked by RBAC Gateway!")
+    response = result.get("agent_response", "")
+    if sys.stdout and hasattr(sys.stdout, 'encoding') and sys.stdout.encoding:
+        try:
+            response = response.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+        except Exception:
+            pass
+    print("Agent Response:\n", response)
+    assert "general_agent_node" in result.get("execution_path")
+    assert "coach_assignment_node" not in result.get("execution_path")
+    print("[SUCCESS] TEST 1 PASSED: Learner was correctly blocked by RBAC Gateway!")
 
 def test_coach_success():
     print("\n--- TEST 2: Coach executing Assignment Operation ---")
@@ -46,9 +53,15 @@ def test_coach_success():
     
     result = graph.invoke(state)
     print("Execution Path Taken:", result.get("execution_path"))
-    print("Agent Response:\n", result.get("agent_response"))
+    response = result.get("agent_response", "")
+    if sys.stdout and hasattr(sys.stdout, 'encoding') and sys.stdout.encoding:
+        try:
+            response = response.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+        except Exception:
+            pass
+    print("Agent Response:\n", response)
     assert "coach_assignment_node" in result.get("execution_path")
-    print("✅ TEST 2 PASSED: Coach successfully triggered assignment orchestration!")
+    print("[SUCCESS] TEST 2 PASSED: Coach successfully triggered assignment orchestration!")
 
 if __name__ == "__main__":
     try:

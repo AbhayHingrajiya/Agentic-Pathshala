@@ -5,7 +5,7 @@ def route_intent(state):
 
     # Strict RBAC Guard Gateway: Block unauthorized role access to coach operations
     if intent in ["assign_task", "track_progress"] and role != "coach":
-        return "fallback"
+        return "unauthorized"
 
     # Coach Fallback Gate: If a coach triggers learner checking intents, redirect to coach administrative handler
     if role == "coach" and intent in ["assignment_query", "progress_query"]:
