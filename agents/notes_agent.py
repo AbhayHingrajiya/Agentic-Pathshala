@@ -84,7 +84,17 @@ def notes_agent(state):
         # Action is query - perform RAG retrieval with learner isolation
         results = retrieve_documents(query, learner_id=learner_id, k=5)
         
-        context = "\n\n".join([doc.page_content for doc, score in results])
+        # Extract context and track sources
+        context_parts = []
+        sources = []
+        for doc, score in results:
+            context_parts.append(doc.page_content)
+            # Extract source from metadata
+            source = doc.metadata.get("source", "Unknown source")
+            if source not in sources:
+                sources.append(source)
+        
+        context = "\n\n".join(context_parts)
         
         prompt = load_prompt("notes_agent")
         chain = prompt | llm
@@ -95,7 +105,13 @@ def notes_agent(state):
             "memory_context": state.get("memory_context", "No past memories.")
         })
         
-        state["agent_response"] = response.content
+        # Append sources to the response
+        agent_response = response.content
+        if sources:
+            sources_text = "\n📚 **Sources:**\n" + "\n".join([f"  • {source}" for source in sources])
+            agent_response = agent_response + sources_text
+        
+        state["agent_response"] = agent_response
         state["retrieved_context"] = context
         state["execution_path"].append("notes_agent")
         

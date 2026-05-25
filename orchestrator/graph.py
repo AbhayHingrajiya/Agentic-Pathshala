@@ -53,6 +53,7 @@ builder.add_conditional_edges(
         "recommendation": "recommendation",  
         "evaluator_agent": "evaluator_agent",
         "fallback": "general_agent",
+        "unauthorized": "fallback",
         "coach_assignment": "coach_assignment"
     }
 )

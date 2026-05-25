@@ -24,6 +24,7 @@ def coordinator_node(state: CoachState) -> dict:
         
         return {
             "current_intent": updated_state["current_intent"],
+            "user_input": updated_state.get("user_input", state.get("user_input")),
             "execution_path": updated_state["execution_path"]
         }
     except Exception as e:
