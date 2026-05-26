@@ -199,7 +199,7 @@ def memory_reader_node(state: CoachState) -> dict:
     except Exception as e:
         return {
             "memory_context": "Memory unavailable.",
-            "execution_path": state.get("execution_path", []) + ["memory_reader_error"]
+            "execution_path": state.get("execution_path", []) 
         }
 
 def memory_writer_node(state: CoachState) -> dict:
@@ -235,7 +235,7 @@ def memory_writer_node(state: CoachState) -> dict:
     except Exception as e:
         # Never crash here — memory saving is non-critical
         return {
-            "execution_path": state.get("execution_path", []) + ["memory_writer_error"]
+            "execution_path": state.get("execution_path", []) 
         }
 
 def progress_agent_node(state: CoachState) -> dict:
